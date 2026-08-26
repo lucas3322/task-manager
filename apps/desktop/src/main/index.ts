@@ -1,0 +1,37 @@
+import { join } from 'node:path'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { createTask, getSnapshot, initializeDatabase, trashTask, updateTask } from './database'
+import type { CreateTaskInput, UpdateTaskInput } from '@orbitask/contracts'
+
+function createWindow(): void {
+  const window = new BrowserWindow({
+    width: 1440,
+    height: 900,
+    minWidth: 1024,
+    minHeight: 680,
+    titleBarStyle: 'hiddenInset',
+    backgroundColor: '#f7f7fa',
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  })
+  window.webContents.setWindowOpenHandler(({ url }) => { if (url.startsWith('https://')) shell.openExternal(url); return { action: 'deny' } })
+  if (process.env.ELECTRON_RENDERER_URL) window.loadURL(process.env.ELECTRON_RENDERER_URL)
+  else window.loadFile(join(__dirname, '../renderer/index.html'))
+}
+
+app.whenReady().then(() => {
+  initializeDatabase()
+  ipcMain.handle('workspace:snapshot', () => getSnapshot())
+  ipcMain.handle('task:create', (_event, input: CreateTaskInput) => createTask(input))
+  ipcMain.handle('task:update', (_event, input: UpdateTaskInput) => updateTask(input))
+  ipcMain.handle('task:move', (_event, input: { id: string; statusId: string; position: number }) => updateTask(input))
+  ipcMain.handle('task:trash', (_event, id: string) => trashTask(id))
+  createWindow()
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
+})
+
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
