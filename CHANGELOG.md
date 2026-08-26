@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
+## Em desenvolvimento
+
+### Novidades
+
+- API NestJS com PostgreSQL, histórico de alterações e exclusão lógica.
+- Ambiente Docker Compose com banco, API e landing.
+- Dockerfiles separados e documentação de implantação no Railway.
+
+### Alterações
+
+- O Electron passa a consumir a API; não acessa mais um banco SQLite diretamente.
+
 ## 0.1.0 — 2026-08-26
 
 ### Novidades

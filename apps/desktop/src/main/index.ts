@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { createTask, getSnapshot, initializeDatabase, trashTask, updateTask } from './database'
+import { apiClient } from './api-client'
 import type { CreateTaskInput, UpdateTaskInput } from '@orbitask/contracts'
 
 function createWindow(): void {
@@ -24,12 +24,11 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  initializeDatabase()
-  ipcMain.handle('workspace:snapshot', () => getSnapshot())
-  ipcMain.handle('task:create', (_event, input: CreateTaskInput) => createTask(input))
-  ipcMain.handle('task:update', (_event, input: UpdateTaskInput) => updateTask(input))
-  ipcMain.handle('task:move', (_event, input: { id: string; statusId: string; position: number }) => updateTask(input))
-  ipcMain.handle('task:trash', (_event, id: string) => trashTask(id))
+  ipcMain.handle('workspace:snapshot', () => apiClient.getSnapshot())
+  ipcMain.handle('task:create', (_event, input: CreateTaskInput) => apiClient.createTask(input))
+  ipcMain.handle('task:update', (_event, input: UpdateTaskInput) => apiClient.updateTask(input))
+  ipcMain.handle('task:move', (_event, input: { id: string; statusId: string; position: number }) => apiClient.updateTask(input))
+  ipcMain.handle('task:trash', (_event, id: string) => apiClient.trashTask(id))
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
 })

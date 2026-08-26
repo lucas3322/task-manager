@@ -21,7 +21,7 @@ const next = level === 'major' ? `${major + 1}.0.0` : level === 'minor' ? `${maj
 console.log(`${dryRun ? '[dry-run] ' : ''}${root.version} -> ${next} (${level})`)
 if (dryRun) process.exit(0)
 
-for (const file of ['package.json', 'apps/desktop/package.json', 'apps/site/package.json', 'packages/contracts/package.json', 'packages/domain/package.json']) {
+for (const file of ['package.json', 'apps/api/package.json', 'apps/desktop/package.json', 'apps/site/package.json', 'packages/contracts/package.json', 'packages/domain/package.json']) {
   const manifest = JSON.parse(readFileSync(file, 'utf8'))
   manifest.version = next
   writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`)

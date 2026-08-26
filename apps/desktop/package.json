@@ -7,8 +7,6 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "rebuild:native": "electron-builder install-app-deps",
-    "postinstall": "electron-builder install-app-deps",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
@@ -18,15 +16,12 @@
     "@orbitask/contracts": "workspace:*",
     "@orbitask/domain": "workspace:*",
     "@tanstack/react-query": "^5.66.8",
-    "better-sqlite3": "^11.8.1",
-    "drizzle-orm": "^0.39.3",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.4.1",

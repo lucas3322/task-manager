@@ -10,9 +10,6 @@ files:
   - package.json
   - '!**/*.map'
 
-asarUnpack:
-  - '**/node_modules/better-sqlite3/**'
-
 mac:
   category: public.app-category.productivity
   target: [dmg, zip]
@@ -36,4 +33,4 @@ nsis:
 portable:
   artifactName: ${productName}-${version}-portable.${ext}
 
-npmRebuild: true
+npmRebuild: false

@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orbitask
+      POSTGRES_USER: orbitask
+      POSTGRES_PASSWORD: orbitask_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - orbitask_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbitask -d orbitask"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgres://orbitask:orbitask_dev@postgres:5432/orbitask
+      PORT: 3000
+      ALLOWED_ORIGINS: http://localhost:4173
+    ports:
+      - "3300:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  site:
+    build:
+      context: .
+      dockerfile: Dockerfile.site
+    environment:
+      PORT: 8080
+    ports:
+      - "4173:8080"
+
+volumes:
+  orbitask_postgres:

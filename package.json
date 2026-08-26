@@ -5,7 +5,10 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "pnpm --filter @orbitask/desktop dev",
+    "dev:api": "pnpm --filter @orbitask/api dev",
     "dev:site": "pnpm --filter @orbitask/site dev",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
