@@ -25,6 +25,12 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   ipcMain.handle('workspace:snapshot', () => apiClient.getSnapshot())
+  ipcMain.handle('auth:session',()=>apiClient.getSession())
+  ipcMain.handle('auth:signup',(_event,input)=>apiClient.signUp(input))
+  ipcMain.handle('auth:signin',(_event,input)=>apiClient.signIn(input))
+  ipcMain.handle('auth:signout',()=>apiClient.signOut())
+  ipcMain.handle('project:create',(_event,input)=>apiClient.createProject(input))
+  ipcMain.handle('project:select',(_event,id:string)=>apiClient.getSnapshot(id))
   ipcMain.handle('task:create', (_event, input: CreateTaskInput) => apiClient.createTask(input))
   ipcMain.handle('task:update', (_event, input: UpdateTaskInput) => apiClient.updateTask(input))
   ipcMain.handle('task:move', (_event, input: { id: string; statusId: string; position: number }) => apiClient.updateTask(input))

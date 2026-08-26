@@ -41,6 +41,7 @@ Não defina `PORT`: o Railway fornece essa variável automaticamente e a API esc
 - Crie outro serviço a partir do mesmo repositório e branch `main`.
 - Root Directory: `/`.
 - Variável `RAILWAY_DOCKERFILE_PATH=/Dockerfile.site`.
+- Variável de build `VITE_API_URL=https://api.orbitask.app/api/v1`.
 - Gere um domínio e vincule `orbitask.app`.
 - O Caddy usa a variável `PORT` fornecida pelo Railway e redireciona rotas como `/download` para a SPA.
 
@@ -64,15 +65,13 @@ Antes de publicar instaladores, valide `/health`, crie uma tarefa pelo app e con
 6. Validar healthcheck, migrations, landing e operações de tarefa.
 7. Criar a tag `vX.Y.Z` somente após a implantação saudável.
 
-## Plano de evolução
+## Estado atual e evolução
 
-1. **Agora:** PostgreSQL, API de snapshot/tarefas, landing e Electron online.
-2. **Autenticação:** usuários, workspaces, convites, JWT rotativo e autorização por papel.
-3. **Multi-tenant:** todas as tabelas recebem `workspace_id`; testes garantem isolamento.
-4. **Web app:** aplicação separada em `apps/web`, publicada em `app.orbitask.app`.
-5. **Tempo real:** WebSocket, notificações e presença; Redis gerenciado quando necessário.
-6. **Offline:** cache local e fila de sincronização no Electron, sem conexão direta ao banco.
-7. **Operação:** migrations versionadas, backups testados, observabilidade, rate limiting e rollout gradual.
+1. **Entregue:** PostgreSQL, API, cadastro/login, workspaces, projetos, tarefas, landing, app web e Electron online.
+2. **Próximo:** convites, papéis completos, comentários, anexos e notificações persistidas.
+3. **Colaboração:** WebSocket, presença e Redis gerenciado quando necessário.
+4. **Offline:** cache local e fila de sincronização no Electron, sem conexão direta ao banco.
+5. **Operação:** migrations numeradas, backups testados, observabilidade, rate limiting e rollout gradual.
 
 ## Checklist de produção
 
@@ -84,3 +83,4 @@ Antes de publicar instaladores, valide `/health`, crie uma tarefa pelo app e con
 - Backup e restauração ensaiados.
 - Migration executada antes de tráfego da nova versão.
 - API compatível com pelo menos uma versão anterior do Electron.
+- Cadastro, login, logout e isolamento entre dois workspaces validados.

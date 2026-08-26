@@ -1,112 +1,39 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { FormEvent, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BarChart3, Bell, CheckSquare2, ChevronDown, CircleHelp, FileText, LayoutDashboard, List, Map, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Sparkles, Users } from 'lucide-react'
+import { BarChart3, Bell, CheckSquare2, ChevronDown, CircleHelp, LayoutDashboard, List, LogOut, Map, MoreHorizontal, Plus, Search, Settings, SlidersHorizontal, Sparkles, Trash2, Users, X } from 'lucide-react'
 import { create } from 'zustand'
-import type { Priority, Status, Task, WorkspaceSnapshot } from '@orbitask/contracts'
+import type { AuthSession, Priority, SignInInput, SignUpInput, Status, Task, UpdateTaskInput, WorkspaceSnapshot } from '@orbitask/contracts'
 import './styles.css'
 
-type View = 'board' | 'list'
-interface Store {
-  snapshot: WorkspaceSnapshot | null
-  view: View
-  query: string
-  load(): Promise<void>
-  setView(view: View): void
-  setQuery(query: string): void
-  createTask(statusId: string, title: string): Promise<void>
-  moveTask(id: string, statusId: string): Promise<void>
-}
-
-const useStore = create<Store>((set, get) => ({
-  snapshot: null,
-  view: 'board',
-  query: '',
-  load: async () => set({ snapshot: await window.orbitask.getSnapshot() }),
-  setView: (view) => set({ view }),
-  setQuery: (query) => set({ query }),
-  createTask: async (statusId, title) => {
-    const snapshot = get().snapshot
-    if (!snapshot) return
-    const task = await window.orbitask.createTask({ projectId: snapshot.project.id, statusId, title })
-    set({ snapshot: { ...snapshot, tasks: [...snapshot.tasks, task] } })
-  },
-  moveTask: async (id, statusId) => {
-    const snapshot = get().snapshot
-    if (!snapshot) return
-    const task = await window.orbitask.moveTask({ id, statusId, position: Date.now() })
-    set({ snapshot: { ...snapshot, tasks: snapshot.tasks.map((item) => item.id === id ? task : item) } })
-  },
+type View='board'|'list'; type Page='project'|'mine'|'overview'
+interface Store { session:AuthSession|null; snapshot:WorkspaceSnapshot|null; ready:boolean; view:View; page:Page; query:string; selectedTask:Task|null; notice:string|null; load():Promise<void>; authenticate(mode:'login'|'signup',input:SignInInput|SignUpInput):Promise<void>; signOut():Promise<void>; setView(v:View):void; setPage(v:Page):void; setQuery(v:string):void; selectTask(v:Task|null):void; setNotice(v:string|null):void; selectProject(id:string):Promise<void>; createProject(name:string):Promise<void>; createTask(statusId:string,title:string):Promise<void>; updateTask(input:UpdateTaskInput):Promise<void>; moveTask(id:string,statusId:string):Promise<void>; trashTask(id:string):Promise<void> }
+const useStore=create<Store>((set,get)=>({session:null,snapshot:null,ready:false,view:'board',page:'project',query:'',selectedTask:null,notice:null,
+  load:async()=>{const session=await window.orbitask.getSession();if(!session)return set({ready:true});const snapshot=await window.orbitask.getSnapshot();set({session,snapshot,ready:true})},
+  authenticate:async(mode,input)=>{const session=mode==='login'?await window.orbitask.signIn(input as SignInInput):await window.orbitask.signUp(input as SignUpInput);const snapshot=await window.orbitask.getSnapshot();set({session,snapshot,notice:`Bem-vindo, ${session.user.name.split(' ')[0]}!`})},
+  signOut:async()=>{await window.orbitask.signOut();set({session:null,snapshot:null,selectedTask:null})},setView:view=>set({view}),setPage:page=>set({page}),setQuery:query=>set({query}),selectTask:selectedTask=>set({selectedTask}),setNotice:notice=>set({notice}),
+  selectProject:async id=>set({snapshot:await window.orbitask.getSnapshot(id),page:'project'}),
+  createProject:async name=>{const project=await window.orbitask.createProject({name});set({snapshot:await window.orbitask.getSnapshot(project.id),notice:'Projeto criado com sucesso'})},
+  createTask:async(statusId,title)=>{const s=get().snapshot;if(!s)return;const task=await window.orbitask.createTask({projectId:s.project.id,statusId,title});set({snapshot:{...s,tasks:[...s.tasks,task]},notice:'Tarefa criada'})},
+  updateTask:async input=>{const s=get().snapshot;if(!s)return;const task=await window.orbitask.updateTask(input);set({snapshot:{...s,tasks:s.tasks.map(t=>t.id===task.id?task:t)},selectedTask:task,notice:'Alterações salvas'})},
+  moveTask:async(id,statusId)=>{const s=get().snapshot;if(!s)return;const task=await window.orbitask.moveTask({id,statusId,position:Date.now()});set({snapshot:{...s,tasks:s.tasks.map(t=>t.id===id?task:t)}})},
+  trashTask:async id=>{await window.orbitask.trashTask(id);const s=get().snapshot;if(s)set({snapshot:{...s,tasks:s.tasks.filter(t=>t.id!==id)},selectedTask:null,notice:'Tarefa movida para a lixeira'})}
 }))
+const priorities:Record<Priority,string>={low:'Baixa',medium:'Média',high:'Alta',urgent:'Urgente'}
 
-const priorityLabels: Record<Priority, string> = { low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente' }
+function AuthScreen(){const authenticate=useStore(s=>s.authenticate);const [mode,setMode]=useState<'login'|'signup'>('login');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [form,setForm]=useState({name:'',email:'',password:'',workspaceName:''});const submit=async(e:FormEvent)=>{e.preventDefault();setBusy(true);setError('');try{await authenticate(mode,form)}catch(e){setError(e instanceof Error?e.message:'Não foi possível entrar')}finally{setBusy(false)}};return <div className="auth-shell"><section className="auth-brand"><span className="logo big"><Sparkles/></span><h1>Trabalho claro.<br/>Equipe no ritmo.</h1><p>Projetos, tarefas e decisões reunidos em uma experiência simples.</p><div className="auth-proof">✓ Seus dados protegidos no PostgreSQL<br/>✓ Acesso no desktop e, em breve, na web<br/>✓ Workspace pronto em menos de um minuto</div></section><form className="auth-card" onSubmit={submit}><div className="auth-wordmark"><span className="logo"><Sparkles size={18}/></span> orbitask</div><h2>{mode==='login'?'Entre na sua conta':'Crie seu workspace'}</h2><p>{mode==='login'?'Continue de onde sua equipe parou.':'Comece gratuitamente. Sem cartão.'}</p>{mode==='signup'&&<><label>Seu nome<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Como devemos chamar você?"/></label><label>Nome do workspace<input value={form.workspaceName} onChange={e=>setForm({...form,workspaceName:e.target.value})} placeholder="Minha empresa"/></label></>}<label>E-mail<input required type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="voce@empresa.com"/></label><label>Senha<input required type="password" minLength={8} value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="Mínimo de 8 caracteres"/></label>{error&&<div className="form-error">{error}</div>}<button className="auth-submit" disabled={busy}>{busy?'Aguarde...':mode==='login'?'Entrar':'Criar conta e workspace'}</button><button type="button" className="auth-switch" onClick={()=>{setMode(mode==='login'?'signup':'login');setError('')}}>{mode==='login'?'Ainda não tem conta? Cadastre-se':'Já tem uma conta? Entrar'}</button></form></div>}
 
-function Sidebar() {
-  return <aside className="sidebar">
-    <div className="brand"><span className="logo"><Sparkles size={18} /></span><strong>orbitask</strong><ChevronDown size={14} /></div>
-    <button className="create"><Plus size={17} /> Criar</button>
-    <nav>
-      <a><LayoutDashboard size={17} /> Visão geral</a><a><CheckSquare2 size={17} /> Minhas tarefas <span>4</span></a><a><Bell size={17} /> Caixa de entrada <i></i></a>
-    </nav>
-    <div className="nav-title">Workspace <button><Plus size={15} /></button></div>
-    <nav><a className="active"><span className="project-dot"></span> Lançamento do produto</a><a><span className="project-dot blue"></span> Marketing</a><a><span className="project-dot green"></span> Operações</a></nav>
-    <div className="nav-title">Favoritos</div>
-    <nav><a><FileText size={17} /> Briefing do produto</a><a><BarChart3 size={17} /> Metas do trimestre</a></nav>
-    <div className="sidebar-bottom"><a><Users size={17} /> Convidar pessoas</a><a><CircleHelp size={17} /> Ajuda e recursos</a></div>
-  </aside>
-}
-
-function TaskCard({ task }: { task: Task }) {
-  return <article className="task-card" draggable={false}>
-    <div className="task-top"><span className={`priority ${task.priority}`}>{priorityLabels[task.priority]}</span><MoreHorizontal size={17} /></div>
-    <h3>{task.title}</h3>
-    <p>{task.description || 'Adicione contexto e detalhes para sua equipe.'}</p>
-    <div className="task-footer"><span className="avatar">LP</span><span className="task-meta"><CheckSquare2 size={14} /> 0/3</span></div>
-  </article>
-}
-
-function Column({ status, tasks }: { status: Status; tasks: Task[] }) {
-  const { setNodeRef, isOver } = useDroppable({ id: status.id })
-  const createTask = useStore((state) => state.createTask)
-  const [adding, setAdding] = useState(false)
-  const [title, setTitle] = useState('')
-  const submit = async () => { if (!title.trim()) return; await createTask(status.id, title); setTitle(''); setAdding(false) }
-  return <section ref={setNodeRef} className={`column ${isOver ? 'over' : ''}`}>
-    <header><span className="status-dot" style={{ background: status.color }}></span><strong>{status.name}</strong><em>{tasks.length}</em><button onClick={() => setAdding(true)}><Plus size={17} /></button></header>
-    <div className="cards">{tasks.map((task) => <DraggableTask key={task.id} task={task} />)}</div>
-    {adding ? <div className="quick-add"><input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') submit(); if (event.key === 'Escape') setAdding(false) }} placeholder="Nome da tarefa"/><button onClick={submit}>Adicionar</button></div> : <button className="add-task" onClick={() => setAdding(true)}><Plus size={16} /> Adicionar tarefa</button>}
-  </section>
-}
-
-function DraggableTask({ task }: { task: Task }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.id })
-  return <div ref={setNodeRef} {...listeners} {...attributes} style={{ transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined, opacity: isDragging ? .5 : 1 }}><TaskCard task={task} /></div>
-}
-
-function Board({ snapshot, tasks }: { snapshot: WorkspaceSnapshot; tasks: Task[] }) {
-  const moveTask = useStore((state) => state.moveTask)
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
-  const dragEnd = (event: DragEndEvent) => { if (event.over) moveTask(String(event.active.id), String(event.over.id)) }
-  return <DndContext sensors={sensors} onDragEnd={dragEnd}><div className="board">{snapshot.statuses.map((status) => <Column key={status.id} status={status} tasks={tasks.filter((task) => task.statusId === status.id)} />)}</div></DndContext>
-}
-
-function ListView({ snapshot, tasks }: { snapshot: WorkspaceSnapshot; tasks: Task[] }) {
-  return <div className="list-view"><div className="list-head"><span>Tarefa</span><span>Status</span><span>Prioridade</span><span>Responsável</span></div>{tasks.map((task) => { const status = snapshot.statuses.find((item) => item.id === task.statusId); return <div className="list-row" key={task.id}><strong>{task.title}</strong><span><i style={{ background: status?.color }}></i>{status?.name}</span><span className={`priority ${task.priority}`}>{priorityLabels[task.priority]}</span><span><b className="avatar">LP</b> Lucas</span></div> })}</div>
-}
-
-function App() {
-  const { snapshot, load, view, setView, query, setQuery } = useStore()
-  useEffect(() => { load() }, [load])
-  const filtered = useMemo(() => snapshot?.tasks.filter((task) => task.title.toLowerCase().includes(query.toLowerCase())) ?? [], [snapshot, query])
-  if (!snapshot) return <div className="loading"><span className="logo"><Sparkles /></span> Preparando seu workspace...</div>
-  return <div className="shell"><Sidebar /><main>
-    <div className="topbar"><div className="search"><Search size={17} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tarefas, projetos e pessoas..."/><kbd>⌘ K</kbd></div><button className="icon-button"><Bell size={19} /></button><div className="avatar">LP</div></div>
-    <div className="project-header"><div><p>Projetos / Produto</p><h1><span className="project-icon">L</span>{snapshot.project.name}<button><ChevronDown size={16} /></button></h1></div><div className="header-actions"><button><Users size={17} /> Compartilhar</button><button className="icon-button"><MoreHorizontal size={19}/></button></div></div>
-    <div className="viewbar"><div className="views"><button onClick={() => setView('board')} className={view === 'board' ? 'selected' : ''}><LayoutDashboard size={16}/> Quadro</button><button onClick={() => setView('list')} className={view === 'list' ? 'selected' : ''}><List size={16}/> Lista</button><button disabled><BarChart3 size={16}/> Gantt <small>em breve</small></button><button disabled><Map size={16}/> Mapa</button></div><button><SlidersHorizontal size={16}/> Filtrar</button><button><Settings size={16}/> Personalizar</button></div>
-    <div className="content">{view === 'board' ? <Board snapshot={snapshot} tasks={filtered} /> : <ListView snapshot={snapshot} tasks={filtered} />}</div>
-  </main></div>
-}
-
-const client = new QueryClient()
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><App /></QueryClientProvider></React.StrictMode>)
+function Sidebar({onCreate}:{onCreate:()=>void}){const {snapshot,page,setPage,selectProject,signOut}=useStore();if(!snapshot)return null;return <aside className="sidebar"><div className="brand"><span className="logo"><Sparkles size={18}/></span><strong>orbitask</strong><ChevronDown size={14}/></div><button className="create" onClick={onCreate}><Plus size={17}/> Criar</button><nav><button className={page==='overview'?'active':''} onClick={()=>setPage('overview')}><LayoutDashboard size={17}/> Visão geral</button><button className={page==='mine'?'active':''} onClick={()=>setPage('mine')}><CheckSquare2 size={17}/> Minhas tarefas <span>{snapshot.tasks.length}</span></button></nav><div className="nav-title">Projetos <button onClick={onCreate}><Plus size={15}/></button></div><nav>{snapshot.projects.map(p=><button key={p.id} className={page==='project'&&p.id===snapshot.project.id?'active':''} onClick={()=>selectProject(p.id)}><span className="project-dot" style={{background:p.color}}/> {p.name}</button>)}</nav><div className="nav-title">Workspace</div><nav><button onClick={()=>useStore.getState().setNotice(`${snapshot.workspace.name} · Você é ${snapshot.workspace.role}`)}><Users size={17}/> {snapshot.workspace.name}</button></nav><div className="sidebar-bottom"><button onClick={()=>useStore.getState().setNotice('Documentação de ajuda será publicada com o lançamento.')}><CircleHelp size={17}/> Ajuda e recursos</button><button onClick={signOut}><LogOut size={17}/> Sair</button></div></aside>}
+function Dialog({title,onClose,children}:{title:string;onClose:()=>void;children:React.ReactNode}){return <div className="overlay" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="dialog"><header><h2>{title}</h2><button onClick={onClose}><X/></button></header>{children}</section></div>}
+function CreateDialog({onClose}:{onClose:()=>void}){const {snapshot,createProject,createTask}=useStore();const [type,setType]=useState<'task'|'project'>('task');const [name,setName]=useState('');const [status,setStatus]=useState(snapshot?.statuses[0]?.id??'');const submit=async(e:FormEvent)=>{e.preventDefault();if(type==='project')await createProject(name);else await createTask(status,name);onClose()};return <Dialog title="Criar novo" onClose={onClose}><div className="segmented"><button className={type==='task'?'selected':''} onClick={()=>setType('task')}>Tarefa</button><button className={type==='project'?'selected':''} onClick={()=>setType('project')}>Projeto</button></div><form className="modal-form" onSubmit={submit}><label>{type==='task'?'Título da tarefa':'Nome do projeto'}<input autoFocus required value={name} onChange={e=>setName(e.target.value)}/></label>{type==='task'&&<label>Status<select value={status} onChange={e=>setStatus(e.target.value)}>{snapshot?.statuses.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}<footer><button type="button" onClick={onClose}>Cancelar</button><button className="primary-action">Criar {type==='task'?'tarefa':'projeto'}</button></footer></form></Dialog>}
+function TaskDrawer(){const {selectedTask:task,snapshot,selectTask,updateTask,trashTask}=useStore();const [draft,setDraft]=useState(task);useEffect(()=>setDraft(task),[task]);if(!task||!draft||!snapshot)return null;return <div className="drawer-backdrop" onMouseDown={e=>e.target===e.currentTarget&&selectTask(null)}><aside className="task-drawer"><header><span>Tarefa · {snapshot.project.name}</span><button onClick={()=>selectTask(null)}><X/></button></header><input className="drawer-title" value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})}/><div className="task-fields"><label>Status<select value={draft.statusId} onChange={e=>setDraft({...draft,statusId:e.target.value})}>{snapshot.statuses.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Prioridade<select value={draft.priority} onChange={e=>setDraft({...draft,priority:e.target.value as Priority})}>{Object.entries(priorities).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>Prazo<input type="date" value={draft.dueDate??''} onChange={e=>setDraft({...draft,dueDate:e.target.value||null})}/></label></div><label className="description-label">Descrição<textarea rows={8} value={draft.description} onChange={e=>setDraft({...draft,description:e.target.value})} placeholder="Contexto, objetivo e critérios de conclusão..."/></label><div className="drawer-info"><Users/> Responsável <span className="avatar">{snapshot.user.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</span><strong>{snapshot.user.name}</strong></div><footer><button className="danger" onClick={()=>confirm('Mover esta tarefa para a lixeira?')&&trashTask(task.id)}><Trash2/> Excluir</button><button className="primary-action" onClick={()=>updateTask({id:task.id,title:draft.title,description:draft.description,statusId:draft.statusId,priority:draft.priority,dueDate:draft.dueDate})}>Salvar alterações</button></footer></aside></div>}
+function TaskCard({task}:{task:Task}){const select=useStore(s=>s.selectTask);return <article className="task-card" onClick={()=>select(task)}><div className="task-top"><span className={`priority ${task.priority}`}>{priorities[task.priority]}</span><MoreHorizontal size={17}/></div><h3>{task.title}</h3><p>{task.description||'Adicione contexto e detalhes para sua equipe.'}</p><div className="task-footer"><span className="avatar">LP</span><span className="task-meta">{task.dueDate||<><CheckSquare2 size={14}/> Sem prazo</>}</span></div></article>}
+function DraggableTask({task}:{task:Task}){const d=useDraggable({id:task.id});return <div ref={d.setNodeRef} {...d.listeners} {...d.attributes} style={{transform:d.transform?`translate3d(${d.transform.x}px,${d.transform.y}px,0)`:undefined,opacity:d.isDragging?.5:1}}><TaskCard task={task}/></div>}
+function Column({status,tasks}:{status:Status;tasks:Task[]}){const drop=useDroppable({id:status.id});const create=useStore(s=>s.createTask);const [adding,setAdding]=useState(false);const [title,setTitle]=useState('');const submit=async()=>{if(!title.trim())return;await create(status.id,title);setTitle('');setAdding(false)};return <section ref={drop.setNodeRef} className={`column ${drop.isOver?'over':''}`}><header><span className="status-dot" style={{background:status.color}}/><strong>{status.name}</strong><em>{tasks.length}</em><button onClick={()=>setAdding(true)}><Plus/></button></header><div className="cards">{tasks.map(t=><DraggableTask task={t} key={t.id}/>)}</div>{adding?<div className="quick-add"><input autoFocus value={title} onChange={e=>setTitle(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')submit();if(e.key==='Escape')setAdding(false)}} placeholder="Nome da tarefa"/><div><button onClick={submit}>Adicionar</button><button onClick={()=>setAdding(false)}>Cancelar</button></div></div>:<button className="add-task" onClick={()=>setAdding(true)}><Plus/> Adicionar tarefa</button>}</section>}
+function Board({snapshot,tasks}:{snapshot:WorkspaceSnapshot;tasks:Task[]}){const move=useStore(s=>s.moveTask);const sensors=useSensors(useSensor(PointerSensor,{activationConstraint:{distance:7}}));return <DndContext sensors={sensors} onDragEnd={(e:DragEndEvent)=>e.over&&move(String(e.active.id),String(e.over.id))}><div className="board">{snapshot.statuses.map(s=><Column key={s.id} status={s} tasks={tasks.filter(t=>t.statusId===s.id)}/>)}</div></DndContext>}
+function ListView({snapshot,tasks}:{snapshot:WorkspaceSnapshot;tasks:Task[]}){const select=useStore(s=>s.selectTask);return <div className="list-view"><div className="list-head"><span>Tarefa</span><span>Status</span><span>Prioridade</span><span>Prazo</span></div>{tasks.map(t=>{const st=snapshot.statuses.find(s=>s.id===t.statusId);return <button className="list-row" key={t.id} onClick={()=>select(t)}><strong>{t.title}</strong><span><i style={{background:st?.color}}/>{st?.name}</span><span className={`priority ${t.priority}`}>{priorities[t.priority]}</span><span>{t.dueDate??'Sem prazo'}</span></button>})}</div>}
+function Overview({snapshot}:{snapshot:WorkspaceSnapshot}){return <div className="overview-grid"><article><small>TAREFAS ATIVAS</small><strong>{snapshot.tasks.length}</strong><p>em {snapshot.projects.length} projeto(s)</p></article><article><small>CONCLUÍDAS</small><strong>{snapshot.tasks.filter(t=>t.statusId===snapshot.statuses.at(-1)?.id).length}</strong><p>avance itens pelo quadro</p></article><article><small>PRIORIDADE ALTA</small><strong>{snapshot.tasks.filter(t=>['high','urgent'].includes(t.priority)).length}</strong><p>pedem sua atenção</p></article></div>}
+function WorkspaceApp(){const {snapshot,view,setView,page,query,setQuery,notice,setNotice}=useStore();const [create,setCreate]=useState(false);const [filters,setFilters]=useState(false);const [priority,setPriority]=useState<Priority|'all'>('all');useEffect(()=>{if(notice){const id=setTimeout(()=>setNotice(null),3000);return()=>clearTimeout(id)}},[notice,setNotice]);if(!snapshot)return null;const tasks=snapshot.tasks.filter(t=>t.title.toLowerCase().includes(query.toLowerCase())&&(priority==='all'||t.priority===priority));return <div className="shell"><Sidebar onCreate={()=>setCreate(true)}/><main><div className="topbar"><div className="search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar tarefas..."/><kbd>⌘ K</kbd></div><button className="icon-button" onClick={()=>setNotice(`${snapshot.tasks.filter(t=>t.priority==='urgent').length} tarefa(s) urgente(s)`)}><Bell/></button><button className="user-avatar" onClick={()=>setNotice(snapshot.user.email)}>{snapshot.user.name.split(' ').map(n=>n[0]).slice(0,2).join('')}</button></div><div className="project-header"><div><p>{snapshot.workspace.name} / {page==='overview'?'Visão geral':'Projetos'}</p><h1><span className="project-icon" style={{background:snapshot.project.color}}>{snapshot.project.name[0]}</span>{page==='overview'?'Visão geral':page==='mine'?'Minhas tarefas':snapshot.project.name}</h1></div><div className="header-actions"><button onClick={()=>setNotice('Convites entram na próxima entrega de colaboração.')}><Users/> Compartilhar</button><button className="icon-button" onClick={()=>setNotice(`Projeto criado em ${new Date(snapshot.project.createdAt).toLocaleDateString('pt-BR')}`)}><MoreHorizontal/></button></div></div>{page!=='overview'&&<div className="viewbar"><div className="views"><button onClick={()=>setView('board')} className={view==='board'?'selected':''}><LayoutDashboard/> Quadro</button><button onClick={()=>setView('list')} className={view==='list'?'selected':''}><List/> Lista</button><button disabled title="Planejado para a próxima versão"><BarChart3/> Gantt <small>em breve</small></button><button disabled title="Planejado para a próxima versão"><Map/> Mapa</button></div><div className="popover-wrap"><button onClick={()=>setFilters(!filters)} className={priority!=='all'?'filter-active':''}><SlidersHorizontal/> Filtrar</button>{filters&&<div className="filter-menu"><strong>Prioridade</strong><select value={priority} onChange={e=>setPriority(e.target.value as Priority|'all')}><option value="all">Todas</option>{Object.entries(priorities).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select><button onClick={()=>{setPriority('all');setFilters(false)}}>Limpar filtros</button></div>}</div><button onClick={()=>setNotice('Preferências visuais serão salvas em uma próxima versão.')}><Settings/> Personalizar</button></div>}<div className="content">{page==='overview'?<Overview snapshot={snapshot}/>:view==='board'?<Board snapshot={snapshot} tasks={tasks}/>:<ListView snapshot={snapshot} tasks={tasks}/>}</div></main>{create&&<CreateDialog onClose={()=>setCreate(false)}/>}<TaskDrawer/>{notice&&<div className="toast">{notice}</div>}</div>}
+function App(){const {ready,session,load}=useStore();useEffect(()=>{load()},[load]);if(!ready)return <div className="loading"><span className="logo"><Sparkles/></span> Carregando...</div>;return session?<WorkspaceApp/>:<AuthScreen/>}
+const client=new QueryClient();ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><App/></QueryClientProvider></React.StrictMode>)

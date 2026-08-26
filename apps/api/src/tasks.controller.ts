@@ -1,12 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import type { CreateTaskInput, UpdateTaskInput } from '@orbitask/contracts'
 import { TasksService } from './tasks.service.js'
+import { AuthGuard, CurrentAuth, type AuthContext } from './auth.guard.js'
 
-@Controller('api/v1')
+@Controller('api/v1') @UseGuards(AuthGuard)
 export class TasksController {
   constructor(private readonly tasks: TasksService) {}
-  @Get('workspace/snapshot') snapshot() { return this.tasks.snapshot() }
-  @Post('tasks') create(@Body() input: CreateTaskInput) { return this.tasks.create(input) }
-  @Patch('tasks/:id') update(@Param('id') id: string, @Body() input: Omit<UpdateTaskInput,'id'>) { return this.tasks.update({ ...input, id }) }
-  @Delete('tasks/:id') trash(@Param('id') id: string) { return this.tasks.trash(id) }
+  @Get('workspace/snapshot') snapshot(@CurrentAuth() auth:AuthContext,@Query('projectId') projectId?:string) { return this.tasks.snapshot(auth.user.id,auth.workspace,projectId) }
+  @Post('tasks') create(@CurrentAuth() auth:AuthContext,@Body() input: CreateTaskInput) { return this.tasks.create(auth.workspace.id,input) }
+  @Patch('tasks/:id') update(@CurrentAuth() auth:AuthContext,@Param('id') id: string, @Body() input: Omit<UpdateTaskInput,'id'>) { return this.tasks.update(auth.workspace.id,{ ...input, id }) }
+  @Delete('tasks/:id') trash(@CurrentAuth() auth:AuthContext,@Param('id') id: string) { return this.tasks.trash(auth.workspace.id,id) }
 }

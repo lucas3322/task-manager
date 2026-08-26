@@ -38,6 +38,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.site
+      args:
+        VITE_API_URL: http://localhost:3300/api/v1
     environment:
       PORT: 8080
     ports:

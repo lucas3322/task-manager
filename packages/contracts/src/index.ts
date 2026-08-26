@@ -9,6 +9,7 @@ export interface Status {
 
 export interface Project {
   id: string
+  workspaceId: string
   name: string
   description: string
   color: string
@@ -31,7 +32,10 @@ export interface Task {
 }
 
 export interface WorkspaceSnapshot {
+  workspace: Workspace
+  user: User
   project: Project
+  projects: Project[]
   statuses: Status[]
   tasks: Task[]
 }
@@ -55,9 +59,20 @@ export interface UpdateTaskInput {
 }
 
 export interface OrbitaskApi {
-  getSnapshot(): Promise<WorkspaceSnapshot>
+  getSession(): Promise<AuthSession | null>
+  signUp(input: SignUpInput): Promise<AuthSession>
+  signIn(input: SignInInput): Promise<AuthSession>
+  signOut(): Promise<void>
+  getSnapshot(projectId?: string): Promise<WorkspaceSnapshot>
+  createProject(input: { name: string; color?: string }): Promise<Project>
   createTask(input: CreateTaskInput): Promise<Task>
   updateTask(input: UpdateTaskInput): Promise<Task>
   moveTask(input: { id: string; statusId: string; position: number }): Promise<Task>
   trashTask(id: string): Promise<void>
 }
+
+export interface User { id: string; name: string; email: string; createdAt: string }
+export interface Workspace { id: string; name: string; role: 'admin' | 'member' | 'guest' }
+export interface AuthSession { user: User; workspace: Workspace }
+export interface SignUpInput { name: string; email: string; password: string; workspaceName?: string }
+export interface SignInInput { email: string; password: string }

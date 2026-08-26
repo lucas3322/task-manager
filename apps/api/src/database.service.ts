@@ -41,8 +41,8 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     const projectId = randomUUID()
     await this.transaction(async (query) => {
       await query('INSERT INTO projects (id, name, description, color) VALUES ($1,$2,$3,$4)', [projectId, 'Lançamento do produto', 'Planejamento da primeira versão do Orbitask', '#665cf6'])
-      await query(`INSERT INTO statuses (id,name,color,position) VALUES
-        ('backlog','A fazer','#a0a5b1',0),('progress','Em andamento','#665cf6',1),('review','Em revisão','#ee9b3b',2),('done','Concluído','#2ca87f',3)`)
+      await query(`INSERT INTO statuses (id,project_id,name,color,position) VALUES
+        ('backlog',$1,'A fazer','#a0a5b1',0),('progress',$1,'Em andamento','#665cf6',1),('review',$1,'Em revisão','#ee9b3b',2),('done',$1,'Concluído','#2ca87f',3)`, [projectId])
       await query(`INSERT INTO tasks (id,project_id,title,status_id,priority,position) VALUES
         ($1,$2,'Definir objetivos do trimestre','backlog','high',0),
         ($3,$2,'Validar protótipo com usuários','progress','urgent',0),
