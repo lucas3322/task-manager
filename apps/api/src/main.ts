@@ -1,10 +1,17 @@
 import 'reflect-metadata'
-import { Controller, Get, Module } from '@nestjs/common'
+import { Controller, Get, Module, Redirect } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module.js'
 
 @Controller()
-class HealthController { @Get('health') health() { return { status:'ok', service:'orbitask-api', version:process.env.npm_package_version ?? '0.3.0' } } }
+class HealthController {
+  @Get()
+  @Redirect(process.env.ORBITASK_WEB_URL ?? 'https://handsome-upliftment-production-4492.up.railway.app/app')
+  webApp() {}
+
+  @Get('health')
+  health() { return { status:'ok', service:'orbitask-api', version:process.env.npm_package_version ?? '0.3.0' } }
+}
 @Module({ imports:[AppModule], controllers:[HealthController] })
 class BootstrapModule {}
 
