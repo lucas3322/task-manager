@@ -1,14 +1,20 @@
 {
   "name": "@orbitask/domain",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "dependencies": { "@orbitask/contracts": "workspace:*" },
-  "devDependencies": { "vitest": "^3.0.5" }
+  "dependencies": {
+    "@orbitask/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
+  }
 }

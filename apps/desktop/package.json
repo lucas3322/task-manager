@@ -1,12 +1,15 @@
 {
   "name": "@orbitask/desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dist:mac": "pnpm build && electron-builder --mac",
+    "dist:mac:arm64": "pnpm build && electron-builder --mac --arm64",
+    "dist:mac:x64": "pnpm build && electron-builder --mac --x64",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

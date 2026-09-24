@@ -7,6 +7,16 @@ import { AuthGuard } from './auth.guard.js'
 import { AuthService } from './auth.service.js'
 import { ProjectsController } from './projects.controller.js'
 import { ProjectsService } from './projects.service.js'
+import { CollaborationController } from './collaboration.controller.js'
+import { CollaborationService } from './collaboration.service.js'
+import { NotificationsController } from './notifications.controller.js'
+import { NotificationsService } from './notifications.service.js'
+import { AutomationsController } from './automations.controller.js'
+import { AutomationsService } from './automations.service.js'
+import { SearchController } from './search.controller.js'
+import { SearchService } from './search.service.js'
+import { InsightsController } from './insights.controller.js'
+import { InsightsService } from './insights.service.js'
 
-@Module({ controllers:[AuthController,ProjectsController,TasksController], providers:[DatabaseService,AuthService,AuthGuard,ProjectsService,TasksService] })
+@Module({ controllers:[AuthController,ProjectsController,TasksController,CollaborationController,NotificationsController,AutomationsController,SearchController,InsightsController], providers:[DatabaseService,AuthService,AuthGuard,ProjectsService,TasksService,CollaborationService,NotificationsService,AutomationsService,SearchService,InsightsService] })
 export class AppModule {}

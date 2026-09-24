@@ -1,7 +1,7 @@
 {
   "name": "orbitask",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "pnpm --filter @orbitask/desktop dev",
@@ -10,6 +10,9 @@
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "build": "pnpm -r build",
+    "package:mac": "pnpm --filter @orbitask/desktop dist:mac",
+    "package:mac:arm64": "pnpm --filter @orbitask/desktop dist:mac:arm64",
+    "package:mac:x64": "pnpm --filter @orbitask/desktop dist:mac:x64",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "release": "node scripts/release.mjs",
