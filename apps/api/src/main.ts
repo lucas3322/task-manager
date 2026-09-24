@@ -6,7 +6,7 @@ import { AppModule } from './app.module.js'
 @Controller()
 class HealthController {
   @Get()
-  @Redirect(process.env.ORBITASK_WEB_URL ?? 'https://handsome-upliftment-production-4492.up.railway.app/app')
+  @Redirect(process.env.ORBITASK_WEB_URL ?? 'https://handsome-upliftment-production-4492.up.railway.app/')
   webApp() {}
 
   @Get('health')
