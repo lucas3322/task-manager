@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module.js'
 
 @Controller()
-class HealthController { @Get('health') health() { return { status:'ok', service:'orbitask-api', version:process.env.npm_package_version ?? '0.1.0' } } }
+class HealthController { @Get('health') health() { return { status:'ok', service:'orbitask-api', version:process.env.npm_package_version ?? '0.3.0' } } }
 @Module({ imports:[AppModule], controllers:[HealthController] })
 class BootstrapModule {}
 
