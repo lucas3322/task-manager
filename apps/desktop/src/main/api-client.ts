@@ -1,7 +1,8 @@
 import type { AuthSession, AutomationRun, ChangePasswordInput, MyTask, Workspace, CreateTaskInput, CustomFieldDefinition, DashboardReport, GlobalSearchResult, Notification, Portfolio, PortfolioOverview, Project, ProjectAutomation, ProjectPreferences, SavedTaskFilter, SaveAutomationInput, SaveGoalInput, SavePortfolioInput, SaveTaskFilterInput, SignInInput, SignUpInput, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, User, WorkspaceInvite, WorkspaceMember, WorkspaceRole, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput, WorkspaceSnapshot, Goal } from '@orbitask/contracts'
 import { clearToken, loadToken, saveToken } from './session-store'
 
-const baseUrl = (process.env.ORBITASK_API_URL ?? 'http://localhost:3000/api/v1').replace(/\/$/, '')
+declare const __ORBITASK_DEFAULT_API_URL__: string
+const baseUrl = (process.env.ORBITASK_API_URL ?? __ORBITASK_DEFAULT_API_URL__).replace(/\/$/, '')
 
 async function request<T>(path: string, init?: RequestInit, authenticated=true): Promise<T> {
   const token=authenticated ? await loadToken() : null

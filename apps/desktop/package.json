@@ -10,6 +10,8 @@
     "dist:mac": "pnpm build && electron-builder --mac",
     "dist:mac:arm64": "pnpm build && electron-builder --mac --arm64",
     "dist:mac:x64": "pnpm build && electron-builder --mac --x64",
+    "dist:mac:universal": "pnpm build && electron-builder --mac --universal",
+    "dist:win": "pnpm build && electron-builder --win",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

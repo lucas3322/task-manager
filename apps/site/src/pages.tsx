@@ -31,9 +31,10 @@ import {
 import { LogoMark } from "@orbitask/ui/logo";
 
 const VERSION = "0.4.0";
+const RELEASES_URL = "https://github.com/lucas3322/task-manager/releases/latest/download";
 const downloads = {
-  mac: import.meta.env.VITE_DOWNLOAD_MAC_URL as string | undefined,
-  windows: import.meta.env.VITE_DOWNLOAD_WINDOWS_URL as string | undefined,
+  mac: (import.meta.env.VITE_DOWNLOAD_MAC_URL as string | undefined) || `${RELEASES_URL}/Orbitask-mac-universal.dmg`,
+  windows: (import.meta.env.VITE_DOWNLOAD_WINDOWS_URL as string | undefined) || `${RELEASES_URL}/Orbitask-windows-setup.exe`,
 };
 
 /* ---------- Moldura ---------- */

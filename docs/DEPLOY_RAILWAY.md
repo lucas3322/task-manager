@@ -87,3 +87,7 @@ Antes de publicar instaladores, valide `/health`, crie uma tarefa pelo app e con
 - Migration executada antes de tráfego da nova versão.
 - API compatível com pelo menos uma versão anterior do Electron.
 - Cadastro, login, logout e isolamento entre dois workspaces validados.
+
+## Instaladores desktop
+
+O workflow `Release Desktop` (`.github/workflows/release.yml`) roda a cada tag `v*`, gera o `.dmg`/`.zip` universal do macOS e o `.exe` do Windows e publica tudo na GitHub Release. A URL da API embutida vem da variável de repositório `ORBITASK_API_URL` (com fallback para a API do Railway). A página `/download` aponta para `releases/latest/download/`, então não precisa de redeploy do site a cada versão.
