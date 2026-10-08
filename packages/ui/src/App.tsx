@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import type { DesktopUpdatesBridge } from "@orbitask/contracts";
 import { LogoMark } from "./components/Logo";
+import { UpdateNotice } from "./components/UpdateNotice";
 import { ConfirmHost, PromptHost, Spinner, Toaster, hasOpenLayer, isTyping } from "./components/primitives";
 import { ProjectScreen, projectViewTabs } from "./project/ProjectScreen";
 import { ProjectSettingsScreen } from "./project/ProjectSettings";
@@ -21,11 +23,7 @@ declare global {
     orbitaskDesktop?: {
       platform: string;
       setTheme(source: Theme): Promise<void>;
-      updates?: {
-        check(): Promise<{ current: string; latest: string; available: boolean; releaseUrl: string }>;
-        download(): Promise<void>;
-        onProgress(listener: (percent: number) => void): () => void;
-      };
+      updates?: DesktopUpdatesBridge;
     };
   }
 }
@@ -217,6 +215,7 @@ export function OrbitaskApp() {
     return (
       <div className={classes}>
         <AuthScreen inviteToken={invite} initialMode={signup ? "signup" : "login"} onInviteHandled={clearInvite} />
+        <UpdateNotice />
         <Toaster />
       </div>
     );
@@ -234,6 +233,7 @@ export function OrbitaskApp() {
       <CommandPalette />
       <ConfirmHost />
       <PromptHost />
+      <UpdateNotice />
       <Toaster />
     </div>
   );

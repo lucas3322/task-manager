@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CreateTaskInput, OrbitaskApi, UpdateTaskInput } from '@orbitask/contracts'
+import type { CreateTaskInput, DesktopUpdateProgress, DesktopUpdatesBridge, OrbitaskApi, UpdateTaskInput } from '@orbitask/contracts'
 
 const api: OrbitaskApi = {
   getSession:()=>ipcRenderer.invoke('auth:session'),
@@ -62,11 +62,12 @@ contextBridge.exposeInMainWorld('orbitaskDesktop', {
   setTheme: (source: 'system' | 'light' | 'dark') => ipcRenderer.invoke('app:theme', source),
   updates: {
     check: () => ipcRenderer.invoke('updates:check'),
-    download: () => ipcRenderer.invoke('updates:download'),
-    onProgress: (listener: (percent: number) => void) => {
-      const handler = (_event: Electron.IpcRendererEvent, percent: number) => listener(percent)
+    downloadAndInstall: () => ipcRenderer.invoke('updates:install'),
+    openReleasePage: () => ipcRenderer.invoke('updates:release-page'),
+    onProgress: (listener) => {
+      const handler = (_event: Electron.IpcRendererEvent, progress: DesktopUpdateProgress) => listener(progress)
       ipcRenderer.on('updates:progress', handler)
       return () => { ipcRenderer.removeListener('updates:progress', handler) }
     },
-  },
+  } satisfies DesktopUpdatesBridge,
 })

@@ -282,3 +282,25 @@ export interface SignInInput { email: string; password: string }
 export interface ChangePasswordInput { currentPassword: string; newPassword: string }
 export interface InviteDetails { email: string; role: WorkspaceRole; workspaceName: string; invitedByName: string }
 export interface MyTask { id:string; projectId:string; projectName:string; projectColor:string; projectIcon:string; title:string; statusId:string; statusName:string; statusColor:string; priority:string; priorityName:string|null; priorityColor:string|null; dueDate:string|null; done:boolean; doneStatusId:string; updatedAt:string }
+
+/** Atualizações do app Desktop (consultadas na última GitHub Release). */
+export type DesktopUpdateInfo = {
+  status: 'current' | 'available' | 'missing-asset' | 'error'
+  currentVersion: string
+  latestVersion?: string
+  notes?: string
+  releasePageUrl?: string
+  downloadUrl?: string
+  fileName?: string
+  sizeBytes?: number
+  message?: string
+}
+
+export type DesktopUpdateProgress = { receivedBytes: number; totalBytes: number }
+
+export interface DesktopUpdatesBridge {
+  check(): Promise<DesktopUpdateInfo>
+  downloadAndInstall(): Promise<void>
+  openReleasePage(): Promise<void>
+  onProgress(listener: (progress: DesktopUpdateProgress) => void): () => void
+}

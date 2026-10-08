@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Building2, Check, Info, Keyboard, LogOut, Monitor, Moon, Palette, ShieldCheck, Sun, UserRound, type LucideIcon } from "lucide-react";
 import { api, errorMessage } from "../api";
 import { LogoMark } from "../components/Logo";
+import { requestUpdateCheck } from "../components/UpdateNotice";
 import { Avatar, Kbd, Spinner, Switch, confirm, modKey } from "../components/primitives";
 import { formatDate, roleLabel } from "../lib/format";
 import { PageHeader } from "../shell/Sidebar";
@@ -425,67 +426,6 @@ function WorkspaceSettings() {
   );
 }
 
-type UpdateState =
-  | { status: "idle" | "checking" }
-  | { status: "latest"; current: string }
-  | { status: "available"; latest: string }
-  | { status: "downloading"; latest: string; percent: number }
-  | { status: "installing" };
-
-function UpdateRow() {
-  const toast = useStore((state) => state.toast);
-  const os = useStore((state) => state.os);
-  const [state, setState] = useState<UpdateState>({ status: "idle" });
-  const updates = window.orbitaskDesktop!.updates!;
-
-  useEffect(() => updates.onProgress((percent) => setState((prev) => (prev.status === "downloading" ? { ...prev, percent } : prev))), [updates]);
-
-  const check = async () => {
-    setState({ status: "checking" });
-    try {
-      const info = await updates.check();
-      setState(info.available ? { status: "available", latest: info.latest } : { status: "latest", current: info.current });
-    } catch (error) {
-      setState({ status: "idle" });
-      toast(errorMessage(error), { tone: "error" });
-    }
-  };
-
-  const install = async (latest: string) => {
-    setState({ status: "downloading", latest, percent: 0 });
-    try {
-      await updates.download();
-      setState({ status: "installing" });
-      toast(os === "darwin" ? "Instalador aberto: arraste o Orbitask para Aplicativos e reabra o app." : "Instalador aberto: o Orbitask vai fechar para concluir.", { tone: "success" });
-    } catch (error) {
-      setState({ status: "available", latest });
-      toast(errorMessage(error), { tone: "error" });
-    }
-  };
-
-  const description =
-    state.status === "latest" ? `Você já está na versão mais recente (${state.current}).`
-    : state.status === "available" ? `A versão ${state.latest} está disponível.`
-    : state.status === "downloading" ? `Baixando a versão ${state.latest}… ${state.percent}%`
-    : state.status === "installing" ? "Download concluído. Siga o instalador para terminar."
-    : "Procure uma versão mais nova do Orbitask Desktop.";
-
-  return (
-    <SettingsRow label="Atualizações" description={description}>
-      {state.status === "available" ? (
-        <button type="button" className="ui-button primary" onClick={() => void install(state.latest)}>
-          Baixar e instalar
-        </button>
-      ) : (
-        <button type="button" className="ui-button" disabled={state.status === "checking" || state.status === "downloading"} onClick={() => void check()}>
-          {state.status === "checking" || state.status === "downloading" ? <Spinner /> : null}
-          {state.status === "checking" ? "Buscando…" : state.status === "downloading" ? "Baixando…" : "Buscar atualizações"}
-        </button>
-      )}
-    </SettingsRow>
-  );
-}
-
 function AboutSettings() {
   const platform = useStore((state) => state.platform);
   const os = useStore((state) => state.os);
@@ -505,7 +445,13 @@ function AboutSettings() {
             Ver notas
           </a>
         </SettingsRow>
-        {platform === "desktop" && window.orbitaskDesktop?.updates && <UpdateRow />}
+        {platform === "desktop" && window.orbitaskDesktop?.updates && (
+          <SettingsRow label="Atualizações" description="O Orbitask verifica sozinho ao abrir e a cada 6 horas.">
+            <button type="button" className="ui-button" onClick={requestUpdateCheck}>
+              Buscar atualizações
+            </button>
+          </SettingsRow>
+        )}
         <SettingsRow label="Seus dados" description="Projetos e tarefas ficam na API Orbitask com PostgreSQL. Senhas são protegidas com bcrypt." />
       </SettingsGroup>
     </>

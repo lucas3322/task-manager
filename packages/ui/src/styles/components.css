@@ -1002,3 +1002,148 @@
     border-radius: 0;
   }
 }
+
+/* ---------- Aviso de atualização (Desktop) ---------- */
+.update-notice {
+  position: fixed;
+  z-index: 290;
+  right: 20px;
+  bottom: 20px;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-lg);
+  background: var(--material-strong);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  animation: update-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.update-notice-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.update-notice-close:hover:not(:disabled) {
+  background: var(--fill);
+  color: var(--text);
+}
+.update-notice-close svg {
+  width: 14px;
+  height: 14px;
+}
+.update-notice-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-right: 24px;
+}
+.update-notice-row > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--text-2);
+}
+.update-notice-row strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.update-notice-row p,
+.update-hint {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.update-notice-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.update-notice-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.update-ok {
+  color: var(--green-text) !important;
+}
+.update-spin {
+  animation: update-spin 900ms linear infinite;
+}
+.update-progress {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.update-progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.update-progress-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.update-progress-label b {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.update-progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--fill-2);
+  overflow: hidden;
+}
+.update-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 150ms linear;
+}
+.update-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--red-text);
+}
+.update-notice-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@keyframes update-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes update-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .update-notice,
+  .update-spin {
+    animation: none;
+  }
+}

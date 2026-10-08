@@ -1,7 +1,11 @@
 import 'reflect-metadata'
+import { readFileSync } from 'node:fs'
 import { Controller, Get, Module, Redirect } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module.js'
+
+// dist/main.js e src/main.ts ficam um nível abaixo do package.json da API.
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }
 
 @Controller()
 class HealthController {
@@ -10,7 +14,7 @@ class HealthController {
   webApp() {}
 
   @Get('health')
-  health() { return { status:'ok', service:'orbitask-api', version:process.env.npm_package_version ?? '0.3.0' } }
+  health() { return { status:'ok', service:'orbitask-api', version } }
 }
 @Module({ imports:[AppModule], controllers:[HealthController] })
 class BootstrapModule {}

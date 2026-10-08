@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron'
 import { apiClient } from './api-client'
-import { checkForUpdates, downloadUpdate } from './updater'
+import { checkForUpdates, downloadAndInstall, openLatestRelease } from './updater'
 import type { CreateTaskInput, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput } from '@orbitask/contracts'
 
 app.setName('Orbitask')
@@ -86,7 +86,8 @@ app.whenReady().then(() => {
   ipcMain.handle('task:mine',()=>apiClient.listMyTasks())
   ipcMain.handle('task:restore',(_event,id:string)=>apiClient.restoreTask(id))
   ipcMain.handle('updates:check',()=>checkForUpdates())
-  ipcMain.handle('updates:download',(event)=>downloadUpdate(event.sender))
+  ipcMain.handle('updates:install',(event)=>downloadAndInstall((progress)=>{if(!event.sender.isDestroyed())event.sender.send('updates:progress',progress)}))
+  ipcMain.handle('updates:release-page',()=>openLatestRelease())
   ipcMain.handle('app:theme',(_event,source:'system'|'light'|'dark')=>{if(['system','light','dark'].includes(source))nativeTheme.themeSource=source})
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
