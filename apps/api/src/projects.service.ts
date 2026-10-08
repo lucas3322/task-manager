@@ -32,6 +32,17 @@ export class ProjectsService {
     return mapProject(result.rows[0])
   }
 
+  async remove(workspaceId:string,id:string,role:WorkspaceRole='admin'){
+    if(role!=='admin')throw new ForbiddenException('Somente administradores podem excluir projetos')
+    const count=await this.database.query<{total:string}>('SELECT COUNT(*) total FROM projects WHERE workspace_id=$1',[workspaceId])
+    if(Number(count.rows[0]?.total??0)<=1)throw new BadRequestException('O workspace precisa manter pelo menos um projeto')
+    await this.database.transaction(async query=>{
+      await query('DELETE FROM tasks WHERE project_id=$1 AND project_id IN (SELECT id FROM projects WHERE workspace_id=$2)',[id,workspaceId])
+      const result=await query('DELETE FROM projects WHERE id=$1 AND workspace_id=$2',[id,workspaceId])
+      if(!result.rowCount)throw new NotFoundException('Projeto não encontrado')
+    })
+  }
+
   async ensureSettings(projectId:string):Promise<ProjectSettings>{
     const existing=await this.database.query('SELECT 1 FROM project_priorities WHERE project_id=$1 LIMIT 1',[projectId])
     if(!existing.rowCount)await this.database.query(`INSERT INTO project_priorities (id,project_id,name,color,position) VALUES

@@ -263,6 +263,15 @@ export interface OrbitaskApi {
   removePortfolio(id:string):Promise<void>
   saveGoal(input:SaveGoalInput):Promise<Goal>
   removeGoal(id:string):Promise<void>
+  changePassword(input:ChangePasswordInput):Promise<{revoked:number}>
+  signOutOtherSessions():Promise<{revoked:number}>
+  updateWorkspace(input:{name:string}):Promise<Workspace>
+  removeProject(id:string):Promise<void>
+  listTrash(projectId:string):Promise<Task[]>
+  restoreTask(id:string):Promise<void>
+  listMyTasks():Promise<MyTask[]>
+  inspectInvite?(token:string):Promise<InviteDetails>
+  acceptInvite?(token:string,input:{name:string;password:string}):Promise<AuthSession>
 }
 
 export interface User { id: string; name: string; email: string; avatarUrl: string | null; createdAt: string }
@@ -270,3 +279,6 @@ export interface Workspace { id: string; name: string; role: WorkspaceRole }
 export interface AuthSession { user: User; workspace: Workspace }
 export interface SignUpInput { name: string; email: string; password: string; workspaceName?: string }
 export interface SignInInput { email: string; password: string }
+export interface ChangePasswordInput { currentPassword: string; newPassword: string }
+export interface InviteDetails { email: string; role: WorkspaceRole; workspaceName: string; invitedByName: string }
+export interface MyTask { id:string; projectId:string; projectName:string; projectColor:string; projectIcon:string; title:string; statusId:string; statusName:string; statusColor:string; priority:string; priorityName:string|null; priorityColor:string|null; dueDate:string|null; done:boolean; doneStatusId:string; updatedAt:string }

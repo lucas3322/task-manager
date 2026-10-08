@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="soft" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0EEFF"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3D2EB2"/><stop offset=".55" stop-color="#6559E8"/><stop offset="1" stop-color="#877EFF"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#2F255C" flood-opacity=".14"/></filter>
+    <style>
+      text{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+      .eyebrow{font-size:23px;font-weight:700;letter-spacing:2px}
+      .title{font-size:70px;font-weight:800;letter-spacing:-3px;fill:#20202B}
+      .subtitle{font-size:31px;font-weight:450;fill:#707080}
+      .label{font-size:25px;font-weight:700;fill:#20202B}
+      .small{font-size:20px;fill:#707080}
+    </style>
+  </defs>
+  
+    <rect width="1200" height="1200" fill="url(#soft)"/>
+    <circle cx="1020" cy="170" r="230" fill="none" stroke="#DDD8FF" stroke-width="2"/>
+    <circle cx="1020" cy="170" r="160" fill="none" stroke="#E8E5FF" stroke-width="2"/>
+    
+  <g transform="translate(82 74)">
+    <rect width="64" height="64" rx="17.92" fill="#6559E8"/>
+    <path d="M32 11.52c2 12 8 18 20 20-12 2-18 8-20 20-2-12-8-18-20-20 12-2 18-8 20-20Z" fill="#FFFFFF"/>
+    <circle cx="16" cy="16" r="2.24" fill="#FFFFFF"/>
+    <circle cx="48.64" cy="42.88" r="1.792" fill="#FFFFFF"/>
+  </g>
+    <text x="164" y="118" class="label">orbitask</text>
+    <text x="82" y="276" class="eyebrow" fill="#6559E8">NOVA PLATAFORMA DE PRODUTIVIDADE</text>
+    <text x="82" y="386" class="title">Conheça o</text>
+    <text x="82" y="468" class="title" fill="#6559E8">Orbitask.</text>
+    <text x="82" y="535" class="subtitle">Organize o trabalho.</text>
+    <text x="82" y="575" class="subtitle">Ganhe clareza.</text>
+    <g filter="url(#shadow)">
+      <rect x="82" y="675" width="1036" height="405" rx="36" fill="#FFFFFF"/>
+      <rect x="82" y="675" width="238" height="405" rx="36" fill="#171725"/>
+      <rect x="112" y="728" width="178" height="48" rx="12" fill="#6559E8"/>
+      <text x="149" y="759" font-size="18" font-weight="700" fill="#FFF">＋ Criar</text>
+      <text x="116" y="837" font-size="18" fill="#D4D0E8">⌂  Visão geral</text>
+      <text x="116" y="890" font-size="18" fill="#D4D0E8">✓  Minhas tarefas</text>
+      <text x="354" y="742" class="small">PROJETOS  /  PRODUTO</text>
+      <text x="354" y="792" font-size="30" font-weight="750" fill="#20202B">Lançamento do produto</text>
+      <rect x="354" y="838" width="212" height="180" rx="18" fill="#F7F6FB" stroke="#E8E6F0"/>
+      <rect x="586" y="838" width="212" height="180" rx="18" fill="#F7F6FB" stroke="#E8E6F0"/>
+      <rect x="818" y="838" width="250" height="180" rx="18" fill="#F7F6FB" stroke="#E8E6F0"/>
+      <rect x="378" y="884" width="164" height="86" rx="14" fill="#FFF" stroke="#E8E6F0"/>
+      <rect x="610" y="884" width="164" height="86" rx="14" fill="#FFF" stroke="#E8E6F0"/>
+      <rect x="842" y="884" width="202" height="86" rx="14" fill="#FFF" stroke="#E8E6F0"/>
+      <circle cx="398" cy="864" r="6" fill="#A8A4B6"/><circle cx="630" cy="864" r="6" fill="#6559E8"/><circle cx="862" cy="864" r="6" fill="#2CA97B"/>
+    </g>
+</svg>

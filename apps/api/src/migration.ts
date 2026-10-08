@@ -312,4 +312,65 @@ CREATE TABLE IF NOT EXISTS goal_projects (
 );
 CREATE INDEX IF NOT EXISTS idx_portfolios_workspace ON portfolios(workspace_id,updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_goals_workspace ON goals(workspace_id,updated_at DESC);
+
+-- ---------- Integridade (0.4.0) ----------
+-- Projetos sem workspace vinham de um seed antigo e são inacessíveis a qualquer usuário.
+DELETE FROM projects WHERE workspace_id IS NULL;
+-- Prioridades órfãs viram a prioridade "medium" do projeto (ou a primeira disponível).
+UPDATE tasks t SET priority=COALESCE(
+  (SELECT id FROM project_priorities WHERE project_id=t.project_id AND id='medium'),
+  (SELECT id FROM project_priorities WHERE project_id=t.project_id ORDER BY position LIMIT 1),
+  t.priority)
+WHERE EXISTS (SELECT 1 FROM project_priorities WHERE project_id=t.project_id)
+  AND NOT EXISTS (SELECT 1 FROM project_priorities pp WHERE pp.project_id=t.project_id AND pp.id=t.priority);
+UPDATE tasks SET start_date=NULL WHERE start_date IS NOT NULL AND due_date IS NOT NULL AND start_date>due_date;
+DELETE FROM task_attachments WHERE url !~* '^https?://';
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='tasks_dates_check') THEN
+    ALTER TABLE tasks ADD CONSTRAINT tasks_dates_check CHECK (start_date IS NULL OR due_date IS NULL OR start_date<=due_date);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='task_attachments_url_check') THEN
+    ALTER TABLE task_attachments ADD CONSTRAINT task_attachments_url_check CHECK (url ~* '^https?://');
+  END IF;
+END $$;
+-- Status e prioridade precisam pertencer ao projeto da tarefa (vale também para automações).
+CREATE OR REPLACE FUNCTION validate_task_refs() RETURNS TRIGGER AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM statuses WHERE id=NEW.status_id AND project_id=NEW.project_id) THEN
+    RAISE EXCEPTION 'O status escolhido não pertence a este projeto' USING ERRCODE='23514';
+  END IF;
+  IF EXISTS (SELECT 1 FROM project_priorities WHERE project_id=NEW.project_id)
+     AND NOT EXISTS (SELECT 1 FROM project_priorities WHERE project_id=NEW.project_id AND id=NEW.priority) THEN
+    RAISE EXCEPTION 'A prioridade escolhida não existe neste projeto' USING ERRCODE='23514';
+  END IF;
+  RETURN NEW;
+END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS trg_validate_task_refs ON tasks;
+CREATE TRIGGER trg_validate_task_refs BEFORE INSERT OR UPDATE OF status_id,priority,project_id ON tasks FOR EACH ROW EXECUTE FUNCTION validate_task_refs();
+-- Notificações específicas: o que mudou, sem avisar reordenações e sem duplicar a de atribuição.
+CREATE OR REPLACE FUNCTION notify_task_activity() RETURNS TRIGGER AS $$
+DECLARE
+  message TEXT;
+  kind TEXT := NEW.action;
+BEGIN
+  IF NEW.entity_type<>'task' OR NEW.action NOT IN ('updated','commented','attachment_added') THEN RETURN NEW; END IF;
+  IF NEW.action='commented' THEN message:='Novo comentário na tarefa';
+  ELSIF NEW.action='attachment_added' THEN message:='Novo link na tarefa';
+  ELSIF NEW.payload ? 'statusId' THEN
+    kind:='status_changed';
+    message:='Mudou para '||COALESCE((SELECT name FROM statuses WHERE id=NEW.payload->>'statusId'),'outro status');
+  ELSIF NEW.payload ? 'dueDate' THEN
+    kind:='due_changed';
+    message:=CASE WHEN NEW.payload->>'dueDate' IS NULL THEN 'O prazo foi removido' ELSE 'Novo prazo: '||to_char((NEW.payload->>'dueDate')::date,'DD/MM') END;
+  ELSIF NEW.payload ?| ARRAY['title','description','priority'] THEN message:='A tarefa foi editada';
+  ELSE RETURN NEW;
+  END IF;
+  INSERT INTO notifications (id,user_id,task_id,project_id,type,title,message)
+  SELECT gen_random_uuid(),people.user_id,t.id,t.project_id,kind,t.title,message
+  FROM tasks t
+  JOIN (SELECT user_id FROM task_assignees WHERE task_id=NEW.entity_id UNION SELECT user_id FROM task_followers WHERE task_id=NEW.entity_id) people ON TRUE
+  WHERE t.id=NEW.entity_id AND people.user_id IS DISTINCT FROM NEW.user_id
+    AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.task_id=t.id AND n.user_id=people.user_id AND n.type='assigned' AND n.created_at=NOW());
+  RETURN NEW;
+END; $$ LANGUAGE plpgsql;
 `

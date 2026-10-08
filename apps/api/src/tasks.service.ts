@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import type { CreateTaskInput, CustomFieldDefinition, CustomFieldOption, CustomFieldType, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, UpdateTaskInput, WorkspaceRole, WorkspaceSnapshot } from '@orbitask/contracts'
+import type { CreateTaskInput, MyTask, CustomFieldDefinition, CustomFieldOption, CustomFieldType, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, UpdateTaskInput, WorkspaceRole, WorkspaceSnapshot } from '@orbitask/contracts'
 import { DatabaseService } from './database.service.js'
 import { ProjectsService, mapProject } from './projects.service.js'
 import { CollaborationService } from './collaboration.service.js'
@@ -77,9 +77,13 @@ export class TasksService {
       const followerIds=input.followerIds===undefined?null:[...new Set(input.followerIds)]
       if(input.primaryAssigneeId&&!assigneeIds?.includes(input.primaryAssigneeId)){if(assigneeIds)assigneeIds.unshift(input.primaryAssigneeId)}
       await this.validatePeople(result.rows[0].project_id,[...(assigneeIds??[]),...(followerIds??[]),...(input.primaryAssigneeId?[input.primaryAssigneeId]:[])])
+      const previousAssignees=assigneeIds===null?[]:(await query<{id:string}>('SELECT user_id::text id FROM task_assignees WHERE task_id=$1',[input.id])).rows.map(item=>item.id)
       if(assigneeIds!==null){await query('DELETE FROM task_assignees WHERE task_id=$1',[input.id]);for(const id of assigneeIds)await query('INSERT INTO task_assignees (task_id,user_id,is_primary) VALUES ($1,$2,$3)',[input.id,id,id===(input.primaryAssigneeId??assigneeIds[0])])}
       else if(input.primaryAssigneeId!==undefined){await query('UPDATE task_assignees SET is_primary=FALSE WHERE task_id=$1',[input.id]);if(input.primaryAssigneeId)await query('INSERT INTO task_assignees (task_id,user_id,is_primary) VALUES ($1,$2,TRUE) ON CONFLICT (task_id,user_id) DO UPDATE SET is_primary=TRUE',[input.id,input.primaryAssigneeId])}
       if(followerIds!==null){await query('DELETE FROM task_followers WHERE task_id=$1',[input.id]);for(const id of followerIds)await query('INSERT INTO task_followers (task_id,user_id) VALUES ($1,$2)',[input.id,id])}
+      /* Quem acabou de ser atribuído recebe um aviso próprio (o gatilho genérico pula essa pessoa). */
+      const added=(assigneeIds??[]).filter(id=>id!==userId&&!previousAssignees.includes(id))
+      if(added.length){const actor=await query<{name:string}>('SELECT name FROM users WHERE id=$1',[userId]);for(const id of added)await query(`INSERT INTO notifications (id,user_id,task_id,project_id,type,title,message) VALUES ($1,$2,$3,$4,'assigned',$5,$6)`,[randomUUID(),id,input.id,result.rows[0].project_id,result.rows[0].title,`${actor.rows[0]?.name??'Alguém'} atribuiu esta tarefa a você`])}
       await query('INSERT INTO activity_log (id,entity_type,entity_id,action,payload,user_id) VALUES ($1,$2,$3,$4,$5,$6)', [randomUUID(),'task',input.id,'updated',JSON.stringify(input),userId??null])
       const tags=await query<{id:string}>('SELECT tag_id::text id FROM task_tags WHERE task_id=$1',[input.id])
       const badges=await query<{id:string}>('SELECT badge_id::text id FROM task_badges WHERE task_id=$1',[input.id])
@@ -97,6 +101,21 @@ export class TasksService {
     if (!result.rowCount) throw new NotFoundException('Tarefa não encontrada')
   }
 
+  async listMine(workspaceId:string,userId:string,role:WorkspaceRole):Promise<MyTask[]>{
+    const result=await this.database.query<{id:string;project_id:string;project_name:string;project_color:string;project_icon:string;title:string;status_id:string;status_name:string;status_color:string;priority:string;priority_name:string|null;priority_color:string|null;due_date:string|null;done:boolean;done_status_id:string;updated_at:string}>(`SELECT t.id,t.project_id,p.name project_name,p.color project_color,p.icon project_icon,t.title,t.status_id,s.name status_name,s.color status_color,t.priority,pp.name priority_name,pp.color priority_color,t.due_date,(s.position=(SELECT MAX(position) FROM statuses WHERE project_id=p.id)) done,(SELECT id FROM statuses WHERE project_id=p.id ORDER BY position DESC LIMIT 1) done_status_id,t.updated_at FROM tasks t JOIN task_assignees ta ON ta.task_id=t.id AND ta.user_id=$2 JOIN projects p ON p.id=t.project_id JOIN statuses s ON s.id=t.status_id LEFT JOIN project_priorities pp ON pp.id::text=t.priority AND pp.project_id=p.id WHERE p.workspace_id=$1 AND t.deleted_at IS NULL AND ($3<>'guest' OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=p.id AND pm.user_id=$2)) ORDER BY t.due_date NULLS LAST,t.updated_at DESC LIMIT 500`,[workspaceId,userId,role])
+    return result.rows.map(row=>({id:row.id,projectId:row.project_id,projectName:row.project_name,projectColor:row.project_color,projectIcon:row.project_icon,title:row.title,statusId:row.status_id,statusName:row.status_name,statusColor:row.status_color,priority:row.priority,priorityName:row.priority_name,priorityColor:row.priority_color,dueDate:row.due_date?new Date(row.due_date).toISOString().slice(0,10):null,done:Boolean(row.done),doneStatusId:row.done_status_id,updatedAt:new Date(row.updated_at).toISOString()}))
+  }
+
+  async listTrash(workspaceId:string,userId:string,role:WorkspaceRole,projectId:string):Promise<Task[]>{
+    const result=await this.database.query<TaskRow>(`SELECT t.* FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.project_id=$1 AND t.deleted_at IS NOT NULL AND p.workspace_id=$2 AND ($4<>'guest' OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=p.id AND pm.user_id=$3)) ORDER BY t.deleted_at DESC LIMIT 200`,[projectId,workspaceId,userId,role])
+    return result.rows.map(row=>mapTask(row))
+  }
+
+  async restore(workspaceId:string,userId:string,role:WorkspaceRole,id:string):Promise<void>{
+    const result=await this.database.query(`UPDATE tasks SET deleted_at=NULL,updated_at=NOW() WHERE id=$1 AND deleted_at IS NOT NULL AND project_id IN (SELECT p.id FROM projects p WHERE p.workspace_id=$2 AND ($4<>'guest' OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=p.id AND pm.user_id=$3)))`,[id,workspaceId,userId,role])
+    if(!result.rowCount)throw new NotFoundException('Tarefa não encontrada na lixeira')
+  }
+
   async createComment(workspaceId:string,userId:string,role:WorkspaceRole,taskId:string,body:string):Promise<TaskComment>{
     if(!body?.trim())throw new BadRequestException('Escreva um comentário')
     const allowed=await this.database.query(`SELECT 1 FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.id=$1 AND p.workspace_id=$2 AND t.deleted_at IS NULL AND ($4<>'guest' OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=p.id AND pm.user_id=$3))`,[taskId,workspaceId,userId,role]);if(!allowed.rowCount)throw new NotFoundException('Tarefa não encontrada')
@@ -105,7 +124,8 @@ export class TasksService {
 
   async addAttachment(workspaceId:string,userId:string,role:WorkspaceRole,taskId:string,input:{name:string;url:string}):Promise<TaskAttachment>{
     if(!input.name?.trim()||!input.url?.trim())throw new BadRequestException('Nome e endereço do anexo são obrigatórios')
-    try{new URL(input.url)}catch{throw new BadRequestException('Informe um endereço válido, incluindo https://')}
+    let protocol='';try{protocol=new URL(input.url).protocol}catch{throw new BadRequestException('Informe um endereço válido, incluindo https://')}
+    if(protocol!=='http:'&&protocol!=='https:')throw new BadRequestException('Use um link começando com http:// ou https://')
     const allowed=await this.database.query(`SELECT 1 FROM tasks t JOIN projects p ON p.id=t.project_id WHERE t.id=$1 AND p.workspace_id=$2 AND t.deleted_at IS NULL AND ($4<>'guest' OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=p.id AND pm.user_id=$3))`,[taskId,workspaceId,userId,role]);if(!allowed.rowCount)throw new NotFoundException('Tarefa não encontrada')
     const result=await this.database.transaction(async query=>{const added=await query<{id:string;task_id:string;name:string;url:string;created_at:string}>('INSERT INTO task_attachments (id,task_id,name,url) VALUES ($1,$2,$3,$4) RETURNING *',[randomUUID(),taskId,input.name.trim(),input.url.trim()]);await query('INSERT INTO activity_log(id,entity_type,entity_id,action,payload,user_id) VALUES($1,$2,$3,$4,$5,$6)',[randomUUID(),'task',taskId,'attachment_added',JSON.stringify({attachmentId:added.rows[0].id,name:input.name.trim()}),userId]);return added.rows[0]});const row=result;return{id:row.id,taskId:row.task_id,name:row.name,url:row.url,createdAt:new Date(row.created_at).toISOString()}
   }

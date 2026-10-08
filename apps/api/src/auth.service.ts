@@ -50,6 +50,18 @@ export class AuthService {
 
   async signOut(token: string) { await this.database.query('DELETE FROM auth_sessions WHERE token_hash=$1',[hashToken(token)]) }
 
+  async signOutOthers(userId:string,token:string){const result=await this.database.query('DELETE FROM auth_sessions WHERE user_id=$1 AND token_hash<>$2',[userId,hashToken(token)]);return{revoked:result.rowCount??0}}
+
+  async changePassword(userId:string,token:string,input:{currentPassword:string;newPassword:string}){
+    if(!input.newPassword||input.newPassword.length<8)throw new BadRequestException('A nova senha deve ter pelo menos 8 caracteres')
+    const result=await this.database.query<UserRow>('SELECT * FROM users WHERE id=$1',[userId])
+    const user=result.rows[0]
+    if(!user||!await bcrypt.compare(input.currentPassword??'',user.password_hash))throw new BadRequestException('A senha atual está incorreta')
+    if(await bcrypt.compare(input.newPassword,user.password_hash))throw new BadRequestException('Escolha uma senha diferente da atual')
+    await this.database.query('UPDATE users SET password_hash=$2 WHERE id=$1',[userId,await bcrypt.hash(input.newPassword,12)])
+    return this.signOutOthers(userId,token)
+  }
+
   async issueSession(userId:string,workspaceId?:string): Promise<{token:string;session:AuthSession}> {
     const token=randomBytes(32).toString('base64url')
     await this.database.query("INSERT INTO auth_sessions (id,user_id,token_hash,workspace_id,expires_at) VALUES ($1,$2,$3,$4,NOW()+INTERVAL '30 days')",[randomUUID(),userId,hashToken(token),workspaceId??null])

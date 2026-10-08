@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme, shell } from 'electron'
 import { apiClient } from './api-client'
 import type { CreateTaskInput, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput } from '@orbitask/contracts'
 
@@ -12,7 +12,10 @@ function createWindow(): void {
     minWidth: 1024,
     minHeight: 680,
     titleBarStyle: 'hiddenInset',
-    backgroundColor: '#f7f7fa',
+    trafficLightPosition: { x: 18, y: 18 },
+    ...(process.platform === 'darwin'
+      ? { vibrancy: 'sidebar' as const, visualEffectState: 'followWindow' as const, backgroundColor: '#00000000' }
+      : { backgroundColor: nativeTheme.shouldUseDarkColors ? '#161618' : '#f5f5f7' }),
     title: 'Orbitask',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -74,6 +77,14 @@ app.whenReady().then(() => {
   ipcMain.handle('portfolio:remove',(_event,id:string)=>apiClient.removePortfolio(id))
   ipcMain.handle('goal:save',(_event,input)=>apiClient.saveGoal(input))
   ipcMain.handle('goal:remove',(_event,id:string)=>apiClient.removeGoal(id))
+  ipcMain.handle('auth:password',(_event,input)=>apiClient.changePassword(input))
+  ipcMain.handle('auth:signout-others',()=>apiClient.signOutOtherSessions())
+  ipcMain.handle('workspace:update',(_event,input)=>apiClient.updateWorkspace(input))
+  ipcMain.handle('project:remove',(_event,id:string)=>apiClient.removeProject(id))
+  ipcMain.handle('task:trash:list',(_event,projectId:string)=>apiClient.listTrash(projectId))
+  ipcMain.handle('task:mine',()=>apiClient.listMyTasks())
+  ipcMain.handle('task:restore',(_event,id:string)=>apiClient.restoreTask(id))
+  ipcMain.handle('app:theme',(_event,source:'system'|'light'|'dark')=>{if(['system','light','dark'].includes(source))nativeTheme.themeSource=source})
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
 })

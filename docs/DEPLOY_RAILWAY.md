@@ -32,7 +32,10 @@ O Electron chama somente a URL pública da API. A API acessa o PostgreSQL pela r
 DATABASE_URL=${{orbitask-postgres.DATABASE_URL}}
 DATABASE_SSL=false
 ALLOWED_ORIGINS=https://orbitask.app,https://app.orbitask.app
+PUBLIC_APP_URL=https://orbitask.app
 ```
+
+`PUBLIC_APP_URL` é o endereço do site usado nos links de convite (`/app?convite=…`). Se ficar vazio, a API usa `ORBITASK_WEB_URL` e depois a primeira origem de `ALLOWED_ORIGINS`.
 
 Não defina `PORT`: o Railway fornece essa variável automaticamente e a API escuta em `0.0.0.0`.
 

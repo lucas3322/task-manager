@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import bcrypt from 'bcryptjs'
-import type { User, WorkspaceInvite, WorkspaceMember, WorkspaceRole } from '@orbitask/contracts'
+import type { User, Workspace, WorkspaceInvite, WorkspaceMember, WorkspaceRole } from '@orbitask/contracts'
 import { AuthService } from './auth.service.js'
 import { DatabaseService } from './database.service.js'
 
@@ -40,7 +40,7 @@ export class CollaborationService {
       for(const projectId of projectIds)await query('INSERT INTO invite_projects (invite_id,project_id) VALUES ($1,$2)',[id,projectId])
     })
     const actor=await this.database.query<{name:string}>('SELECT name FROM users WHERE id=$1',[actorId])
-    const now=Date.now(),base=(process.env.PUBLIC_APP_URL??'http://localhost:4173').replace(/\/$/,'')
+    const now=Date.now(),base=(process.env.PUBLIC_APP_URL??process.env.ORBITASK_WEB_URL??process.env.ALLOWED_ORIGINS?.split(',')[0]?.trim()??'http://localhost:4173').replace(/\/$/,'')
     return{id,email,role,projectIds,invitedByName:actor.rows[0].name,createdAt:new Date(now).toISOString(),expiresAt:new Date(now+7*86400000).toISOString(),inviteUrl:`${base}/app?convite=${encodeURIComponent(token)}`}
   }
 
@@ -83,4 +83,5 @@ export class CollaborationService {
   async removeMember(workspaceId:string,actorId:string,actorRole:WorkspaceRole,userId:string){this.requireAdmin(actorRole);if(userId===actorId)throw new BadRequestException('Você não pode remover a si mesmo');const result=await this.database.query('DELETE FROM workspace_members WHERE workspace_id=$1 AND user_id=$2',[workspaceId,userId]);if(!result.rowCount)throw new NotFoundException('Membro não encontrado')}
   async revokeInvite(workspaceId:string,actorRole:WorkspaceRole,id:string){this.requireAdmin(actorRole);const result=await this.database.query('DELETE FROM workspace_invites WHERE id=$1 AND workspace_id=$2 AND accepted_at IS NULL',[id,workspaceId]);if(!result.rowCount)throw new NotFoundException('Convite não encontrado')}
   async updateProfile(userId:string,input:{name:string;avatarUrl?:string|null}):Promise<User>{const name=input.name?.trim();if(!name||name.length<2)throw new BadRequestException('Informe seu nome');if(input.avatarUrl){try{new URL(input.avatarUrl)}catch{throw new BadRequestException('Informe uma URL válida para o avatar')}}const result=await this.database.query<{id:string;name:string;email:string;avatar_url:string|null;created_at:string}>('UPDATE users SET name=$2,avatar_url=$3 WHERE id=$1 RETURNING id,name,email,avatar_url,created_at',[userId,name,input.avatarUrl?.trim()||null]);const row=result.rows[0];return{id:row.id,name:row.name,email:row.email,avatarUrl:row.avatar_url,createdAt:new Date(row.created_at).toISOString()}}
+  async updateWorkspace(workspaceId:string,actorRole:WorkspaceRole,input:{name:string}):Promise<Workspace>{if(actorRole!=='admin')throw new ForbiddenException('Somente administradores podem renomear o workspace');const name=input.name?.trim();if(!name||name.length<2)throw new BadRequestException('Informe o nome do workspace');const result=await this.database.query<{id:string;name:string}>('UPDATE workspaces SET name=$2 WHERE id=$1 RETURNING id,name',[workspaceId,name.slice(0,160)]);if(!result.rowCount)throw new NotFoundException('Workspace não encontrado');return{id:result.rows[0].id,name:result.rows[0].name,role:actorRole}}
 }

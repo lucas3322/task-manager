@@ -47,6 +47,17 @@ const api: OrbitaskApi = {
   removePortfolio:(id)=>ipcRenderer.invoke('portfolio:remove',id),
   saveGoal:(input)=>ipcRenderer.invoke('goal:save',input),
   removeGoal:(id)=>ipcRenderer.invoke('goal:remove',id),
+  changePassword:(input)=>ipcRenderer.invoke('auth:password',input),
+  signOutOtherSessions:()=>ipcRenderer.invoke('auth:signout-others'),
+  updateWorkspace:(input)=>ipcRenderer.invoke('workspace:update',input),
+  removeProject:(id)=>ipcRenderer.invoke('project:remove',id),
+  listTrash:(projectId)=>ipcRenderer.invoke('task:trash:list',projectId),
+  restoreTask:(id)=>ipcRenderer.invoke('task:restore',id),
+  listMyTasks:()=>ipcRenderer.invoke('task:mine'),
 }
 
 contextBridge.exposeInMainWorld('orbitask', api)
+contextBridge.exposeInMainWorld('orbitaskDesktop', {
+  platform: process.platform,
+  setTheme: (source: 'system' | 'light' | 'dark') => ipcRenderer.invoke('app:theme', source),
+})
