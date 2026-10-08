@@ -1,6 +1,6 @@
 {
   "name": "@orbitask/desktop",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "main": "out/main/index.js",
@@ -22,7 +22,8 @@
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.3",
+    "@orbitask/ui": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.8",

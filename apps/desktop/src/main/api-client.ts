@@ -1,4 +1,4 @@
-import type { AuthSession, AutomationRun, CreateTaskInput, CustomFieldDefinition, DashboardReport, GlobalSearchResult, Notification, Portfolio, PortfolioOverview, Project, ProjectAutomation, ProjectPreferences, SavedTaskFilter, SaveAutomationInput, SaveGoalInput, SavePortfolioInput, SaveTaskFilterInput, SignInInput, SignUpInput, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, User, WorkspaceInvite, WorkspaceMember, WorkspaceRole, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput, WorkspaceSnapshot, Goal } from '@orbitask/contracts'
+import type { AuthSession, AutomationRun, ChangePasswordInput, MyTask, Workspace, CreateTaskInput, CustomFieldDefinition, DashboardReport, GlobalSearchResult, Notification, Portfolio, PortfolioOverview, Project, ProjectAutomation, ProjectPreferences, SavedTaskFilter, SaveAutomationInput, SaveGoalInput, SavePortfolioInput, SaveTaskFilterInput, SignInInput, SignUpInput, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, User, WorkspaceInvite, WorkspaceMember, WorkspaceRole, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput, WorkspaceSnapshot, Goal } from '@orbitask/contracts'
 import { clearToken, loadToken, saveToken } from './session-store'
 
 const baseUrl = (process.env.ORBITASK_API_URL ?? 'http://localhost:3000/api/v1').replace(/\/$/, '')
@@ -59,4 +59,11 @@ export const apiClient = {
   removePortfolio:(id:string)=>request<void>(`/portfolios/${id}`,{method:'DELETE'}),
   saveGoal:(input:SaveGoalInput)=>request<Goal>('/goals',{method:'POST',body:JSON.stringify(input)}),
   removeGoal:(id:string)=>request<void>(`/goals/${id}`,{method:'DELETE'}),
+  changePassword:(input:ChangePasswordInput)=>request<{revoked:number}>('/auth/password',{method:'PATCH',body:JSON.stringify(input)}),
+  signOutOtherSessions:()=>request<{revoked:number}>('/auth/logout-others',{method:'POST'}),
+  updateWorkspace:(input:{name:string})=>request<Workspace>('/workspace',{method:'PATCH',body:JSON.stringify(input)}),
+  removeProject:(id:string)=>request<void>(`/projects/${id}`,{method:'DELETE'}),
+  listTrash:(projectId:string)=>request<Task[]>(`/projects/${encodeURIComponent(projectId)}/trash`),
+  restoreTask:(id:string)=>request<void>(`/tasks/${id}/restore`,{method:'POST'}),
+  listMyTasks:()=>request<MyTask[]>('/me/tasks'),
 }

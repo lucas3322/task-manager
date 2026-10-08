@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="soft" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0EEFF"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3D2EB2"/><stop offset=".55" stop-color="#6559E8"/><stop offset="1" stop-color="#877EFF"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#2F255C" flood-opacity=".14"/></filter>
+    <style>
+      text{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+      .eyebrow{font-size:23px;font-weight:700;letter-spacing:2px}
+      .title{font-size:70px;font-weight:800;letter-spacing:-3px;fill:#20202B}
+      .subtitle{font-size:31px;font-weight:450;fill:#707080}
+      .label{font-size:25px;font-weight:700;fill:#20202B}
+      .small{font-size:20px;fill:#707080}
+    </style>
+  </defs>
+  
+    <rect width="1200" height="1200" fill="#FAFAFD"/>
+    
+  <g transform="translate(82 74)">
+    <rect width="64" height="64" rx="17.92" fill="#6559E8"/>
+    <path d="M32 11.52c2 12 8 18 20 20-12 2-18 8-20 20-2-12-8-18-20-20 12-2 18-8 20-20Z" fill="#FFFFFF"/>
+    <circle cx="16" cy="16" r="2.24" fill="#FFFFFF"/>
+    <circle cx="48.64" cy="42.88" r="1.792" fill="#FFFFFF"/>
+  </g><text x="164" y="118" class="label">orbitask</text>
+    <text x="82" y="276" class="eyebrow" fill="#6559E8">UM ÚNICO LUGAR</text>
+    <text x="82" y="378" class="title">Menos ferramentas.</text>
+    <text x="82" y="460" class="title" fill="#6559E8">Mais clareza.</text>
+    <text x="82" y="529" class="subtitle">Projetos, tarefas e processos em um só lugar.</text>
+    <g opacity=".52">
+      <rect x="80" y="674" width="210" height="112" rx="22" fill="#FFF" stroke="#D8D6E2"/><text x="112" y="738" class="label">Tarefas</text>
+      <rect x="126" y="914" width="230" height="112" rx="22" fill="#FFF" stroke="#D8D6E2"/><text x="158" y="978" class="label">Prazos</text>
+      <rect x="844" y="680" width="260" height="112" rx="22" fill="#FFF" stroke="#D8D6E2"/><text x="876" y="744" class="label">Comentários</text>
+      <rect x="866" y="920" width="238" height="112" rx="22" fill="#FFF" stroke="#D8D6E2"/><text x="898" y="984" class="label">Anexos</text>
+    </g>
+    <path d="M290 730C420 750 420 825 492 844M356 970C430 950 438 884 492 858M844 736C750 760 752 820 708 844M866 976C780 944 772 886 708 860" fill="none" stroke="#B8B1FF" stroke-width="7" stroke-linecap="round"/>
+    <g filter="url(#shadow)"><rect x="474" y="710" width="252" height="290" rx="40" fill="#6559E8"/>
+  <g transform="translate(554 770)">
+    <rect width="92" height="92" rx="25.76" fill="#FFFFFF"/>
+    <path d="M46 16.56c2 12 8 18 20 20-12 2-18 8-20 20-2-12-8-18-20-20 12-2 18-8 20-20Z" fill="#6559E8"/>
+    <circle cx="23" cy="23" r="3.22" fill="#6559E8"/>
+    <circle cx="69.92" cy="61.64" r="2.576" fill="#6559E8"/>
+  </g><text x="537" y="916" font-size="32" font-weight="800" fill="#FFF">Orbitask</text><text x="522" y="950" font-size="18" fill="#E5E2FF">Tudo conectado</text></g>
+</svg>

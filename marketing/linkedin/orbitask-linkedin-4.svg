@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <linearGradient id="soft" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0EEFF"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3D2EB2"/><stop offset=".55" stop-color="#6559E8"/><stop offset="1" stop-color="#877EFF"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#2F255C" flood-opacity=".14"/></filter>
+    <style>
+      text{font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}
+      .eyebrow{font-size:23px;font-weight:700;letter-spacing:2px}
+      .title{font-size:70px;font-weight:800;letter-spacing:-3px;fill:#20202B}
+      .subtitle{font-size:31px;font-weight:450;fill:#707080}
+      .label{font-size:25px;font-weight:700;fill:#20202B}
+      .small{font-size:20px;fill:#707080}
+    </style>
+  </defs>
+  
+    <rect width="1200" height="1200" fill="#FAFAFD"/>
+    
+  <g transform="translate(82 74)">
+    <rect width="64" height="64" rx="17.92" fill="#6559E8"/>
+    <path d="M32 11.52c2 12 8 18 20 20-12 2-18 8-20 20-2-12-8-18-20-20 12-2 18-8 20-20Z" fill="#FFFFFF"/>
+    <circle cx="16" cy="16" r="2.24" fill="#FFFFFF"/>
+    <circle cx="48.64" cy="42.88" r="1.792" fill="#FFFFFF"/>
+  </g><text x="164" y="118" class="label">orbitask</text>
+    <text x="82" y="260" class="eyebrow" fill="#6559E8">WEB + DESKTOP</text>
+    <text x="82" y="358" class="title">O trabalho</text><text x="82" y="440" class="title" fill="#6559E8">acompanha você.</text>
+    <text x="82" y="506" class="subtitle">Projetos e preferências sempre sincronizados.</text>
+    <circle cx="590" cy="840" r="244" fill="#F0EEFF"/>
+    <path d="M398 856C520 730 682 724 814 842" fill="none" stroke="#B7B0FF" stroke-width="8" stroke-dasharray="8 18" stroke-linecap="round"/>
+    <g filter="url(#shadow)"><rect x="136" y="650" width="470" height="320" rx="28" fill="#FFF" stroke="#E3E1EC"/><rect x="162" y="682" width="418" height="236" rx="12" fill="#F7F6FB"/><rect x="162" y="682" width="102" height="236" rx="12" fill="#1A1927"/><rect x="284" y="722" width="258" height="28" rx="10" fill="#E7E4F8"/><rect x="284" y="786" width="118" height="90" rx="14" fill="#FFF" stroke="#E2DFEB"/><rect x="420" y="786" width="122" height="90" rx="14" fill="#FFF" stroke="#E2DFEB"/><path d="M108 988h526l-44 44H152Z" fill="#DCD9E6"/></g>
+    <g filter="url(#shadow)"><rect x="710" y="620" width="354" height="410" rx="34" fill="#1A1927"/><circle cx="887" cy="647" r="7" fill="#393747"/><rect x="736" y="677" width="302" height="318" rx="16" fill="#FFF"/><rect x="762" y="716" width="250" height="32" rx="10" fill="#E9E6FA"/><rect x="762" y="783" width="110" height="116" rx="14" fill="#F5F4F9"/><rect x="888" y="783" width="124" height="116" rx="14" fill="#F5F4F9"/></g>
+    <g><circle cx="634" cy="742" r="38" fill="#6559E8"/><path d="M617 742l12 12 24-28" fill="none" stroke="#FFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

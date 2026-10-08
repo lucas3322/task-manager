@@ -10,6 +10,9 @@ export class TasksController {
   @Post('tasks') create(@CurrentAuth() auth:AuthContext,@Body() input: CreateTaskInput) { return this.tasks.create(auth.workspace.id,input,auth.user.id,auth.workspace.role) }
   @Patch('tasks/:id') update(@CurrentAuth() auth:AuthContext,@Param('id') id: string, @Body() input: Omit<UpdateTaskInput,'id'>) { return this.tasks.update(auth.workspace.id,{ ...input, id },auth.user.id,auth.workspace.role) }
   @Delete('tasks/:id') trash(@CurrentAuth() auth:AuthContext,@Param('id') id: string) { return this.tasks.trash(auth.workspace.id,auth.user.id,auth.workspace.role,id) }
+  @Get('me/tasks') mine(@CurrentAuth() auth:AuthContext) { return this.tasks.listMine(auth.workspace.id,auth.user.id,auth.workspace.role) }
+  @Get('projects/:id/trash') trashList(@CurrentAuth() auth:AuthContext,@Param('id') id:string) { return this.tasks.listTrash(auth.workspace.id,auth.user.id,auth.workspace.role,id) }
+  @Post('tasks/:id/restore') restore(@CurrentAuth() auth:AuthContext,@Param('id') id:string) { return this.tasks.restore(auth.workspace.id,auth.user.id,auth.workspace.role,id) }
   @Post('tasks/:id/comments') comment(@CurrentAuth() auth:AuthContext,@Param('id') id:string,@Body() input:{body:string}) { return this.tasks.createComment(auth.workspace.id,auth.user.id,auth.workspace.role,id,input.body) }
   @Post('tasks/:id/attachments') attachment(@CurrentAuth() auth:AuthContext,@Param('id') id:string,@Body() input:{name:string;url:string}) { return this.tasks.addAttachment(auth.workspace.id,auth.user.id,auth.workspace.role,id,input) }
   @Delete('attachments/:id') removeAttachment(@CurrentAuth() auth:AuthContext,@Param('id') id:string) { return this.tasks.removeAttachment(auth.workspace.id,auth.user.id,auth.workspace.role,id) }

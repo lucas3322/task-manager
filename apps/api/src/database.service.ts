@@ -1,7 +1,23 @@
-import { randomUUID } from 'node:crypto'
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { Pool, type QueryResultRow } from 'pg'
+import { BadRequestException, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import pg, { Pool, type QueryResultRow } from 'pg'
 import { migration } from './migration.js'
+
+/* DATE chega como texto (AAAA-MM-DD): evita deslocar o dia conforme o fuso do servidor. */
+pg.types.setTypeParser(1082, (value: string) => value)
+
+const constraintMessages: Record<string, string> = {
+  tasks_dates_check: 'A data de início não pode ser posterior ao prazo',
+  task_attachments_url_check: 'Use um link começando com http:// ou https://',
+}
+
+/** Violações de integridade viram 400 com mensagem clara, em vez de erro 500. */
+function translate(error: unknown): never {
+  const failure = error as { code?: string; constraint?: string; message?: string }
+  if (failure?.code === '23514') throw new BadRequestException(constraintMessages[failure.constraint ?? ''] ?? failure.message ?? 'Dados inválidos')
+  if (failure?.code === '23503') throw new BadRequestException('Referência inválida: um dos itens informados não existe')
+  if (failure?.code === '22P02' || failure?.code === '22007' || failure?.code === '22008') throw new BadRequestException('Formato de dado inválido')
+  throw error
+}
 
 @Injectable()
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
@@ -15,38 +31,22 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     await this.pool.query(migration)
-    await this.seed()
   }
 
   async onModuleDestroy(): Promise<void> { await this.pool.end() }
 
-  query<T extends QueryResultRow>(text: string, values: unknown[] = []) { return this.pool.query<T>(text, values) }
+  query<T extends QueryResultRow>(text: string, values: unknown[] = []) { return this.pool.query<T>(text, values).catch(translate) }
 
   async transaction<T>(work: (query: DatabaseService['query']) => Promise<T>): Promise<T> {
     const client = await this.pool.connect()
     try {
       await client.query('BEGIN')
-      const result = await work((text, values = []) => client.query(text, values))
+      const result = await work((text, values = []) => client.query(text, values).catch(translate))
       await client.query('COMMIT')
       return result
     } catch (error) {
       await client.query('ROLLBACK')
       throw error
     } finally { client.release() }
-  }
-
-  private async seed(): Promise<void> {
-    const existing = await this.pool.query('SELECT id FROM projects LIMIT 1')
-    if (existing.rowCount) return
-    const projectId = randomUUID()
-    await this.transaction(async (query) => {
-      await query('INSERT INTO projects (id, name, description, color) VALUES ($1,$2,$3,$4)', [projectId, 'Lançamento do produto', 'Planejamento da primeira versão do Orbitask', '#665cf6'])
-      await query(`INSERT INTO statuses (id,project_id,name,color,position) VALUES
-        ('backlog',$1,'A fazer','#a0a5b1',0),('progress',$1,'Em andamento','#665cf6',1),('review',$1,'Em revisão','#ee9b3b',2),('done',$1,'Concluído','#2ca87f',3)`, [projectId])
-      await query(`INSERT INTO tasks (id,project_id,title,status_id,priority,position) VALUES
-        ($1,$2,'Definir objetivos do trimestre','backlog','high',0),
-        ($3,$2,'Validar protótipo com usuários','progress','urgent',0),
-        ($4,$2,'Preparar identidade visual','review','medium',0)`, [randomUUID(), projectId, randomUUID(), randomUUID()])
-    })
   }
 }

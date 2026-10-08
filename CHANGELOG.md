@@ -2,9 +2,33 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
-## Em desenvolvimento
+## Em desenvolvimento (0.4.0)
 
-- Próximas melhorias em planejamento.
+### Novidades
+
+- Nova interface compartilhada (`@orbitask/ui`) usada pela Web e pelo Desktop, com tema claro/escuro, cor de destaque e material translúcido.
+- Landing page reescrita com mockups do produto, visualizações interativas, segurança e perguntas frequentes.
+- Início com foco do dia e nova tela Minhas tarefas (endpoint `GET /me/tasks`) em todos os projetos.
+- Ajustes de perfil, troca de senha, encerramento de outras sessões, renomear workspace e preferências de aparência.
+- Exclusão de projetos, lixeira com restauração e “Desfazer” ao excluir tarefas.
+- Paleta de comandos (⌘K), atalhos de teclado e rotas no endereço (voltar/avançar funcionam).
+- Calendário com arrastar para reagendar e cronograma com marcador de hoje.
+
+### Alterações
+
+- Todos os menus e botões passam a executar ações reais; itens sem função foram removidos.
+- Dados sincronizam sozinhos ao voltar para a janela e a cada 20 s.
+- Notificações específicas: atribuição, mudança de status e de prazo; reordenações não notificam mais.
+- `pnpm dev:api` compila com `tsc --watch` (o `tsx` não emitia metadados de decorators e a injeção de dependências falhava).
+
+### Correções
+
+- Status inválido em uma tarefa retornava erro 500; prioridade inexistente era aceita.
+- Prazo anterior à data de início era aceito quando só o prazo era alterado.
+- Anexos aceitavam links `javascript:`; agora apenas http(s).
+- Links de convite apontavam para `localhost` em produção sem `PUBLIC_APP_URL`.
+- Datas podiam deslocar um dia conforme o fuso do servidor.
+- Banco: remoção do projeto órfão criado pelo seed antigo, correção de prioridades órfãs e novas restrições de integridade.
 
 ## 0.3.0 — 2026-09-24
 
