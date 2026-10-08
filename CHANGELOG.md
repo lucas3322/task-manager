@@ -2,7 +2,7 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
-## Em desenvolvimento (0.4.0)
+## 0.4.0 — 2026-10-08
 
 ### Novidades
 

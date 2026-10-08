@@ -19,4 +19,4 @@ Não faça commits de implementação diretamente em `main`. Toda mudança passa
 - `feat!:` ou `BREAKING CHANGE:` incrementa major.
 - `docs:`, `test:`, `build:` e `chore:` não geram versão sozinhos.
 
-Use `pnpm release:dry` para conferir e `pnpm release` para atualizar os manifests e o changelog. Publicação e tags devem ocorrer somente depois da CI verde.
+Use `npm run release:dry` para conferir a próxima versão e `npm run release` (na `develop`, sem alterações pendentes) para publicar: o script roda typecheck e testes, atualiza manifests, changelog e a versão do site, cria o commit `chore(release): vX.Y.Z`, a tag e faz push. A tag dispara o workflow que gera os instaladores na GitHub Release. Force o nível com `npm run release -- minor`.
