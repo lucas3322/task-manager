@@ -60,4 +60,13 @@ contextBridge.exposeInMainWorld('orbitask', api)
 contextBridge.exposeInMainWorld('orbitaskDesktop', {
   platform: process.platform,
   setTheme: (source: 'system' | 'light' | 'dark') => ipcRenderer.invoke('app:theme', source),
+  updates: {
+    check: () => ipcRenderer.invoke('updates:check'),
+    download: () => ipcRenderer.invoke('updates:download'),
+    onProgress: (listener: (percent: number) => void) => {
+      const handler = (_event: Electron.IpcRendererEvent, percent: number) => listener(percent)
+      ipcRenderer.on('updates:progress', handler)
+      return () => { ipcRenderer.removeListener('updates:progress', handler) }
+    },
+  },
 })

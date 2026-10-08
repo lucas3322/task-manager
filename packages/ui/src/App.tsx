@@ -18,7 +18,15 @@ import { hashToRoute, routeToHash, useStore, type Theme } from "./store";
 
 declare global {
   interface Window {
-    orbitaskDesktop?: { platform: string; setTheme(source: Theme): Promise<void> };
+    orbitaskDesktop?: {
+      platform: string;
+      setTheme(source: Theme): Promise<void>;
+      updates?: {
+        check(): Promise<{ current: string; latest: string; available: boolean; releaseUrl: string }>;
+        download(): Promise<void>;
+        onProgress(listener: (percent: number) => void): () => void;
+      };
+    };
   }
 }
 

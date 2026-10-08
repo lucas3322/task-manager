@@ -46,6 +46,8 @@ for (const file of manifests) {
 
 const sitePages = 'apps/site/src/pages.tsx'
 writeFileSync(sitePages, readFileSync(sitePages, 'utf8').replace(/const VERSION = "[^"]+";/, `const VERSION = "${next}";`))
+const uiVersion = 'packages/ui/src/version.ts'
+writeFileSync(uiVersion, readFileSync(uiVersion, 'utf8').replace(/APP_VERSION = "[^"]+";/, `APP_VERSION = "${next}";`))
 
 const today = new Date().toISOString().slice(0, 10)
 const changelog = readFileSync('CHANGELOG.md', 'utf8')
@@ -56,7 +58,7 @@ const updatedChangelog = pending.test(changelog)
 writeFileSync('CHANGELOG.md', updatedChangelog)
 
 console.log('\n▸ Commit, tag e push…')
-run('git', ['add', ...manifests, sitePages, 'CHANGELOG.md'])
+run('git', ['add', ...manifests, sitePages, uiVersion, 'CHANGELOG.md'])
 run('git', ['commit', '-m', `chore(release): ${tag}`])
 run('git', ['tag', '-a', tag, '-m', `Orbitask ${next}`])
 run('git', ['push', 'origin', RELEASE_BRANCH])
