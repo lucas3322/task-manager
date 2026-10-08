@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
+## 0.5.0 — 2026-10-08
+
+- feat(desktop): aviso de nova versão com download e instalação no app
+- feat(desktop): buscar e instalar atualizações em Ajustes › Sobre
+- build: npm run release faz versão, commit, tag e push
+
 ## 0.4.0 — 2026-10-08
 
 ### Novidades

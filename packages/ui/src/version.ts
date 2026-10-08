@@ -1,4 +1,4 @@
-export const APP_VERSION = "0.4.0";
+export const APP_VERSION = "0.5.0";
 
 const PUBLIC_SITE = "https://handsome-upliftment-production-4492.up.railway.app";
 
