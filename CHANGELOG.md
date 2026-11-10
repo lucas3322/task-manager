@@ -2,6 +2,10 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
+## 0.6.0 — 2026-11-10
+
+- feat: colocando servidor MCP
+
 ## Não lançado
 
 ### Novidades
