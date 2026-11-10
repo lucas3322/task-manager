@@ -9,6 +9,8 @@ import { siteUrl } from "../version";
 import { SettingsGroup, SettingsRow } from "./Settings";
 
 type Client = "claude" | "codex" | "json";
+type System = "unix" | "windows";
+const detectSystem = (): System => (/windows|win32|win64/i.test(`${navigator.userAgent} ${navigator.platform}`) ? "windows" : "unix");
 const TOKEN_PLACEHOLDER = "COLE_SEU_TOKEN_AQUI";
 
 function CodeBlock({ code, label }: { code: string; label: string }) {
@@ -47,6 +49,7 @@ export function IntegrationsSettings() {
   const [error, setError] = useState("");
   const [created, setCreated] = useState<CreatedApiToken | null>(null);
   const [client, setClient] = useState<Client>("claude");
+  const [system, setSystem] = useState<System>(detectSystem);
 
   useEffect(() => {
     api()
@@ -90,23 +93,36 @@ export function IntegrationsSettings() {
 
   const token = created?.token ?? TOKEN_PLACEHOLDER;
   const url = apiUrl || "https://SEU-SERVIDOR/api/v1";
-  const download = `mkdir -p ~/.orbitask && curl -fsSL ${siteUrl()}/mcp/orbitask-mcp.mjs -o ~/.orbitask/orbitask-mcp.mjs`;
+  const win = system === "windows";
+  const serverUrl = `${siteUrl()}/mcp/orbitask-mcp.mjs`;
+  /* Caminho para configs que não expandem ~ ou $HOME: o usuário troca "voce" pelo próprio nome de usuário. */
+  const absolutePath = win ? "C:\\Users\\voce\\.orbitask\\orbitask-mcp.mjs" : "/Users/voce/.orbitask/orbitask-mcp.mjs";
+  const download = win
+    ? `New-Item -ItemType Directory -Force "$HOME\\.orbitask" | Out-Null\nInvoke-WebRequest -Uri "${serverUrl}" -OutFile "$HOME\\.orbitask\\orbitask-mcp.mjs"`
+    : `mkdir -p ~/.orbitask && curl -fsSL ${serverUrl} -o ~/.orbitask/orbitask-mcp.mjs`;
   const snippets: Record<Client, { label: string; hint: string; code: string }> = {
     claude: {
       label: "comando do Claude Code",
-      hint: "Rode no terminal. O escopo user deixa o Orbitask disponível em qualquer pasta.",
-      code: `claude mcp add orbitask --scope user \\\n  --env ORBITASK_API_URL=${url} \\\n  --env ORBITASK_TOKEN=${token} \\\n  -- node ~/.orbitask/orbitask-mcp.mjs`,
+      hint: win
+        ? "Rode no PowerShell. O escopo user deixa o Orbitask disponível em qualquer pasta."
+        : "Rode no terminal. O escopo user deixa o Orbitask disponível em qualquer pasta.",
+      code: win
+        ? `claude mcp add orbitask --scope user \`\n  --env ORBITASK_API_URL=${url} \`\n  --env ORBITASK_TOKEN=${token} \`\n  -- node "$HOME\\.orbitask\\orbitask-mcp.mjs"`
+        : `claude mcp add orbitask --scope user \\\n  --env ORBITASK_API_URL=${url} \\\n  --env ORBITASK_TOKEN=${token} \\\n  -- node ~/.orbitask/orbitask-mcp.mjs`,
     },
     codex: {
       label: "configuração do Codex",
-      hint: "Adicione em ~/.codex/config.toml. Troque /Users/voce pelo caminho da sua pasta pessoal (o Codex não expande ~).",
-      code: `[mcp_servers.orbitask]\ncommand = "node"\nargs = ["/Users/voce/.orbitask/orbitask-mcp.mjs"]\nenv = { ORBITASK_API_URL = "${url}", ORBITASK_TOKEN = "${token}" }`,
+      hint: win
+        ? "Adicione em %USERPROFILE%\\.codex\\config.toml. Troque \"voce\" pelo seu usuário do Windows (o Codex não expande variáveis no caminho)."
+        : "Adicione em ~/.codex/config.toml. Troque /Users/voce pelo caminho da sua pasta pessoal (no Linux, /home/voce); o Codex não expande ~.",
+      /* No Windows usamos string literal TOML ('…') para as barras invertidas não virarem escapes. */
+      code: `[mcp_servers.orbitask]\ncommand = "node"\nargs = [${win ? `'${absolutePath}'` : `"${absolutePath}"`}]\nenv = { ORBITASK_API_URL = "${url}", ORBITASK_TOKEN = "${token}" }`,
     },
     json: {
       label: "configuração JSON",
-      hint: "Formato usado por Claude Desktop, Cursor, Windsurf e outros clientes MCP.",
+      hint: `Formato usado por Claude Desktop, Cursor, Windsurf e outros clientes MCP. Troque "voce" pelo seu usuário${win ? " do Windows" : ""}.`,
       code: JSON.stringify(
-        { mcpServers: { orbitask: { command: "node", args: ["/Users/voce/.orbitask/orbitask-mcp.mjs"], env: { ORBITASK_API_URL: url, ORBITASK_TOKEN: token } } } },
+        { mcpServers: { orbitask: { command: "node", args: [absolutePath], env: { ORBITASK_API_URL: url, ORBITASK_TOKEN: token } } } },
         null,
         2,
       ),
@@ -158,7 +174,21 @@ export function IntegrationsSettings() {
             <span className="mcp-step-index">2</span>
             <div>
               <strong>Baixe o servidor</strong>
-              <p>Um arquivo único; precisa de Node.js 18 ou mais novo.</p>
+              <Segmented
+                label="Sistema operacional"
+                size="sm"
+                value={system}
+                onChange={setSystem}
+                options={[
+                  { value: "unix", label: "macOS / Linux" },
+                  { value: "windows", label: "Windows" },
+                ]}
+              />
+              <p>
+                {win
+                  ? "Abra o PowerShell e rode o comando abaixo. O arquivo único precisa do Node.js 18 ou mais novo (instale com winget install OpenJS.NodeJS.LTS, se ainda não tiver)."
+                  : "Rode no terminal. O arquivo único precisa do Node.js 18 ou mais novo."}
+              </p>
               <CodeBlock code={download} label="comando de download" />
             </div>
           </div>

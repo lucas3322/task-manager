@@ -37,7 +37,7 @@ run('pnpm', ['typecheck'])
 run('pnpm', ['test'])
 
 console.log('\n▸ Atualizando versões…')
-const manifests = ['package.json', 'apps/api/package.json', 'apps/desktop/package.json', 'apps/site/package.json', 'packages/contracts/package.json', 'packages/domain/package.json', 'packages/ui/package.json']
+const manifests = ['package.json', 'apps/api/package.json', 'apps/desktop/package.json', 'apps/mcp/package.json', 'apps/site/package.json', 'packages/contracts/package.json', 'packages/domain/package.json', 'packages/ui/package.json']
 for (const file of manifests) {
   const manifest = JSON.parse(readFileSync(file, 'utf8'))
   manifest.version = next
@@ -51,7 +51,7 @@ writeFileSync(uiVersion, readFileSync(uiVersion, 'utf8').replace(/APP_VERSION = 
 
 const today = new Date().toISOString().slice(0, 10)
 const changelog = readFileSync('CHANGELOG.md', 'utf8')
-const pending = /^## Em desenvolvimento.*$/m
+const pending = /^## (Em desenvolvimento|Não lançado).*$/m
 const updatedChangelog = pending.test(changelog)
   ? changelog.replace(pending, `## ${next} — ${today}`)
   : changelog.replace(/^## /m, `## ${next} — ${today}\n\n${subjects.map((s) => `- ${s}`).join('\n')}\n\n## `)

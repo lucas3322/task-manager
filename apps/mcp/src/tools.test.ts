@@ -18,7 +18,7 @@ const snapshot = {
   tasks: [],
   comments: [], attachments: [], checklistItems: [], dependencies: [], customFields: [], customFieldValues: [], activities: [], invites: [],
   preferences: { cardDensity: 'detailed', defaultView: 'board' },
-  settings: { priorities: [{ id: 'high', name: 'Alta', color: '#ee8b3b', position: 0 }], tags: [{ id: 'tag-bug', name: 'Bug', color: '#e45f65', position: 0 }], badges: [] },
+  settings: { priorities: [{ id: 'high', name: 'Alta', color: '#ee8b3b', position: 0 }], tags: [{ id: 'tag-bug', name: 'Bug', color: '#e45f65', position: 0 }], badges: [{ id: 'badge-cli', name: 'Cliente', color: '#0a7aff', position: 0 }] },
   members: [{ userId: 'u1', name: 'Ana Martins', email: 'ana@example.com', avatarUrl: null, role: 'admin', projectIds: [], createdAt: '' }],
 }
 
@@ -32,7 +32,7 @@ function fakeApi() {
     const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } })
     if (path.startsWith('/workspace/snapshot')) return json(snapshot)
     if (method === 'POST' && path === '/tasks') return json({ id: 't1', projectId: 'p1', parentId: null, title: body.title, description: '', statusId: body.statusId, priority: body.priority ?? 'high', startDate: null, dueDate: null, position: 1, deletedAt: null, createdAt: '', updatedAt: '', tagIds: [], badgeIds: [], assigneeIds: ['u1'], primaryAssigneeId: 'u1', followerIds: [] })
-    if (method === 'PATCH' && path === '/tasks/t1') return json({ id: 't1', projectId: 'p1', parentId: null, title: 'x', description: '', statusId: 's1', priority: 'high', startDate: null, dueDate: null, position: 1, deletedAt: null, createdAt: '', updatedAt: '', tagIds: body.tagIds ?? [], badgeIds: [], assigneeIds: ['u1'], primaryAssigneeId: 'u1', followerIds: [] })
+    if (method === 'PATCH' && path === '/tasks/t1') return json({ id: 't1', projectId: 'p1', parentId: null, title: 'x', description: '', statusId: 's1', priority: 'high', startDate: null, dueDate: null, position: 1, deletedAt: null, createdAt: '', updatedAt: '', tagIds: body.tagIds ?? [], badgeIds: body.badgeIds ?? [], assigneeIds: ['u1'], primaryAssigneeId: 'u1', followerIds: [] })
     return json({ message: 'não encontrado' }, 404)
   }) as typeof fetch
   return { calls, fetcher }
@@ -77,10 +77,11 @@ describe('ferramentas MCP', () => {
 
   it('cria com nomes legíveis e aplica tags e responsáveis', async () => {
     const { call, calls } = await connect()
-    const result = await call('create_task', { title: 'Nova', status: 'revisao', priority: 'alta', tags: ['bug'], assignees: ['me'] })
+    const result = await call('create_task', { title: 'Nova', status: 'revisao', priority: 'alta', tags: ['bug'], badges: ['cliente'], assignees: ['me'] })
     expect(result.error).toBe(false)
     expect(calls.find((item) => item.method === 'POST')?.body).toMatchObject({ projectId: 'p1', statusId: 's2', priority: 'high' })
-    expect(calls.find((item) => item.method === 'PATCH')?.body).toMatchObject({ tagIds: ['tag-bug'], assigneeIds: ['u1'], primaryAssigneeId: 'u1' })
+    expect(calls.find((item) => item.method === 'PATCH')?.body).toMatchObject({ tagIds: ['tag-bug'], badgeIds: ['badge-cli'], assigneeIds: ['u1'], primaryAssigneeId: 'u1' })
+    expect(JSON.parse(result.text).created.badges).toEqual(['Cliente'])
   })
 
   it('modo somente leitura esconde as ferramentas de escrita', async () => {

@@ -26,7 +26,7 @@ import {
 import type { CustomFieldDefinition, Task } from "@orbitask/contracts";
 import { api, errorMessage } from "../api";
 import { AutoTextarea, Avatar, MenuItem, MenuSeparator, Popover, ProjectGlyph, Segmented, Sheet, modKey } from "../components/primitives";
-import { ChoiceMenu, Pill, PropertyButton, memberChoices, optionChoices, priorityChoices, statusChoices } from "../components/task-bits";
+import { Badge, ChoiceMenu, Pill, PropertyButton, memberChoices, optionChoices, priorityChoices, statusChoices } from "../components/task-bits";
 import { activityLabels } from "../lib/catalog";
 import { dueTone, formatDateTime, formatDue, hostOf, relativeTime } from "../lib/format";
 import { taskStats } from "../lib/tasks";
@@ -62,6 +62,62 @@ function Section({ icon: Icon, title, count, children, action }: { icon: typeof 
       </header>
       {children}
     </section>
+  );
+}
+
+/** Seletor de selos ou de tags da tarefa, com atalho para cadastrar novos nas configurações. */
+function LabelPicker({ kind, task }: { kind: "badge" | "tag"; task: Task }) {
+  const snapshot = useStore((state) => state.snapshot)!;
+  const updateTask = useStore((state) => state.updateTask);
+  const navigate = useStore((state) => state.navigate);
+  const closeTask = useStore((state) => state.closeTask);
+  const badge = kind === "badge";
+  const options = badge ? snapshot.settings.badges : snapshot.settings.tags;
+  const value = badge ? task.badgeIds : task.tagIds;
+  const selected = value.map((id) => options.find((item) => item.id === id)).filter((item) => item !== undefined);
+  const noun = badge ? "selos" : "tags";
+  return (
+    <ChoiceMenu
+      multiple
+      choices={optionChoices(options)}
+      value={value}
+      onChange={(ids) => void updateTask(badge ? { id: task.id, badgeIds: ids } : { id: task.id, tagIds: ids })}
+      emptyLabel={`Nenhum ${badge ? "selo" : "tag"} cadastrado ainda`}
+      footer={(close) => (
+        <button
+          type="button"
+          className="ui-menu-footer-link"
+          onClick={() => {
+            close();
+            closeTask();
+            navigate({ name: "project-settings", projectId: snapshot.project.id, tab: "workflow" });
+          }}
+        >
+          {options.length ? `Gerenciar ${noun}…` : `+ Criar ${noun} nas configurações`}
+        </button>
+      )}
+      trigger={(props) => (
+        <PropertyButton {...props} placeholder={!selected.length}>
+          {selected.length ? (
+            <span className="prop-pills">
+              {selected.map((item) =>
+                badge ? (
+                  <Badge key={item.id} color={item.color}>
+                    {item.name}
+                  </Badge>
+                ) : (
+                  <Pill key={item.id} color={item.color}>
+                    {item.name}
+                  </Pill>
+                ),
+              )}
+            </span>
+          ) : (
+            "Adicionar"
+          )}
+        </PropertyButton>
+      )}
+    />
   );
 }
 
@@ -334,33 +390,16 @@ function TaskDetail({ task }: { task: Task }) {
             )}
           </dd>
           <dt>
+            <Sparkles /> Selos
+          </dt>
+          <dd>
+            <LabelPicker kind="badge" task={task} />
+          </dd>
+          <dt>
             <Tag /> Tags
           </dt>
           <dd>
-            <ChoiceMenu
-              multiple
-              choices={[...optionChoices(snapshot.settings.badges).map((item) => ({ ...item, hint: "Selo" })), ...optionChoices(snapshot.settings.tags)]}
-              value={[...task.badgeIds, ...task.tagIds]}
-              onChange={(ids) => void updateTask({ id: task.id, badgeIds: ids.filter((id) => snapshot.settings.badges.some((item) => item.id === id)), tagIds: ids.filter((id) => snapshot.settings.tags.some((item) => item.id === id)) })}
-              emptyLabel="Crie tags nas configurações do projeto"
-              trigger={(props) => (
-                <PropertyButton {...props} placeholder={!task.tagIds.length && !task.badgeIds.length}>
-                  {task.tagIds.length || task.badgeIds.length ? (
-                    <span className="prop-pills">
-                      {[...task.badgeIds.map((id) => snapshot.settings.badges.find((item) => item.id === id)), ...task.tagIds.map((id) => snapshot.settings.tags.find((item) => item.id === id))].map((item) =>
-                        item ? (
-                          <Pill key={item.id} color={item.color}>
-                            {item.name}
-                          </Pill>
-                        ) : null,
-                      )}
-                    </span>
-                  ) : (
-                    "Adicionar"
-                  )}
-                </PropertyButton>
-              )}
-            />
+            <LabelPicker kind="tag" task={task} />
           </dd>
           <dt>
             <Users /> Seguidores

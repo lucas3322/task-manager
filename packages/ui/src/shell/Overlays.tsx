@@ -14,6 +14,7 @@ import {
   Moon,
   Search,
   Settings,
+  Sparkles,
   SquareCheck,
   Sun,
   Target,
@@ -26,7 +27,7 @@ import {
 import type { GlobalSearchResult, WorkspaceSnapshot } from "@orbitask/contracts";
 import { api, errorMessage } from "../api";
 import { Avatar, AutoTextarea, ColorSwatches, Dialog, ProjectGlyph, Spinner, useEscape, usePresence } from "../components/primitives";
-import { ChoiceMenu, Pill, PropertyButton, memberChoices, optionChoices, priorityChoices, statusChoices } from "../components/task-bits";
+import { Badge, ChoiceMenu, Pill, PropertyButton, memberChoices, optionChoices, priorityChoices, statusChoices } from "../components/task-bits";
 import { palette, projectIcons } from "../lib/catalog";
 import { formatDue } from "../lib/format";
 import { firstStatusId } from "../lib/tasks";
@@ -43,7 +44,7 @@ export function CreateTaskDialog() {
   const openTask = useStore((state) => state.openTask);
   const toast = useStore((state) => state.toast);
   const [target, setTarget] = useState<WorkspaceSnapshot | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", statusId: "", priority: "", assigneeIds: [] as string[], dueDate: "", labelIds: [] as string[] });
+  const [form, setForm] = useState({ title: "", description: "", statusId: "", priority: "", assigneeIds: [] as string[], dueDate: "", tagIds: [] as string[], badgeIds: [] as string[] });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [another, setAnother] = useState(false);
@@ -59,7 +60,8 @@ export function CreateTaskDialog() {
       priority: "",
       assigneeIds: [current.user.id],
       dueDate: draft.dueDate ?? "",
-      labelIds: [],
+      tagIds: [],
+      badgeIds: [],
     });
   }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -68,7 +70,7 @@ export function CreateTaskDialog() {
     try {
       const next = projectId === current.project.id ? current : await api().getSnapshot(projectId);
       setTarget(next);
-      setForm((value) => ({ ...value, statusId: firstStatusId(next) ?? "", priority: "", labelIds: [] }));
+      setForm((value) => ({ ...value, statusId: firstStatusId(next) ?? "", priority: "", tagIds: [], badgeIds: [] }));
     } catch (reason) {
       setError(errorMessage(reason, "Não foi possível abrir o projeto"));
     }
@@ -87,9 +89,7 @@ export function CreateTaskDialog() {
         priority: form.priority || undefined,
         parentId: draft?.parentId ?? null,
       });
-      /* Tags e selos dividem o mesmo seletor; separamos pelo cadastro do projeto. */
-      const tagIds = form.labelIds.filter((id) => target.settings.tags.some((item) => item.id === id));
-      const badgeIds = form.labelIds.filter((id) => target.settings.badges.some((item) => item.id === id));
+      const { tagIds, badgeIds } = form;
       const extra = {
         ...(form.description.trim() ? { description: form.description.trim() } : {}),
         ...(tagIds.length ? { tagIds } : {}),
@@ -126,8 +126,8 @@ export function CreateTaskDialog() {
   const status = snapshot.statuses.find((item) => item.id === form.statusId);
   const priority = snapshot.settings.priorities.find((item) => item.id === form.priority);
   const assignees = snapshot.members.filter((member) => form.assigneeIds.includes(member.userId));
-  const labelOptions = [...snapshot.settings.badges, ...snapshot.settings.tags];
-  const labels = form.labelIds.map((id) => labelOptions.find((item) => item.id === id)).filter((item) => item !== undefined);
+  const pickedBadges = form.badgeIds.map((id) => snapshot.settings.badges.find((item) => item.id === id)).filter((item) => item !== undefined);
+  const pickedTags = form.tagIds.map((id) => snapshot.settings.tags.find((item) => item.id === id)).filter((item) => item !== undefined);
 
   return (
     <Dialog
@@ -209,22 +209,49 @@ export function CreateTaskDialog() {
               </PropertyButton>
             )}
           />
+          {snapshot.settings.badges.length > 0 && (
+            <ChoiceMenu
+              multiple
+              choices={optionChoices(snapshot.settings.badges)}
+              value={form.badgeIds}
+              onChange={(badgeIds) => setForm({ ...form, badgeIds })}
+              trigger={(props) => (
+                <PropertyButton {...props} placeholder={!pickedBadges.length}>
+                  {pickedBadges.length ? (
+                    <span className="prop-pills">
+                      {pickedBadges.slice(0, 2).map((item) => (
+                        <Badge key={item.id} color={item.color}>
+                          {item.name}
+                        </Badge>
+                      ))}
+                      {pickedBadges.length > 2 && <span className="subtle">+{pickedBadges.length - 2}</span>}
+                    </span>
+                  ) : (
+                    <>
+                      <Sparkles />
+                      Selos
+                    </>
+                  )}
+                </PropertyButton>
+              )}
+            />
+          )}
           <ChoiceMenu
             multiple
-            choices={[...optionChoices(snapshot.settings.badges).map((item) => ({ ...item, hint: "Selo" })), ...optionChoices(snapshot.settings.tags)]}
-            value={form.labelIds}
-            onChange={(labelIds) => setForm({ ...form, labelIds })}
+            choices={optionChoices(snapshot.settings.tags)}
+            value={form.tagIds}
+            onChange={(tagIds) => setForm({ ...form, tagIds })}
             emptyLabel="Crie tags nas configurações do projeto"
             trigger={(props) => (
-              <PropertyButton {...props} placeholder={!labels.length}>
-                {labels.length ? (
+              <PropertyButton {...props} placeholder={!pickedTags.length}>
+                {pickedTags.length ? (
                   <span className="prop-pills">
-                    {labels.slice(0, 2).map((item) => (
+                    {pickedTags.slice(0, 2).map((item) => (
                       <Pill key={item.id} color={item.color}>
                         {item.name}
                       </Pill>
                     ))}
-                    {labels.length > 2 && <span className="subtle">+{labels.length - 2}</span>}
+                    {pickedTags.length > 2 && <span className="subtle">+{pickedTags.length - 2}</span>}
                   </span>
                 ) : (
                   <>

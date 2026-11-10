@@ -5,17 +5,24 @@ Servidor [MCP](https://modelcontextprotocol.io) (stdio) que conecta o Orbitask a
 ## Instalação
 
 1. No Orbitask, abra **Ajustes › Integrações e MCP** e gere um token de acesso (`otk_…`). Ele aparece uma única vez.
-2. Baixe o servidor (arquivo único, Node.js 18+):
+2. Baixe o servidor (arquivo único, Node.js 18+). O arquivo também é anexado a cada GitHub Release (`orbitask-mcp.mjs`).
+
+   **macOS / Linux** (terminal)
 
    ```bash
    mkdir -p ~/.orbitask && curl -fsSL https://SEU-SITE/mcp/orbitask-mcp.mjs -o ~/.orbitask/orbitask-mcp.mjs
    ```
 
-   O arquivo também é anexado a cada GitHub Release (`orbitask-mcp.mjs`).
+   **Windows** (PowerShell; sem Node, instale com `winget install OpenJS.NodeJS.LTS`)
+
+   ```powershell
+   New-Item -ItemType Directory -Force "$HOME\.orbitask" | Out-Null
+   Invoke-WebRequest -Uri "https://SEU-SITE/mcp/orbitask-mcp.mjs" -OutFile "$HOME\.orbitask\orbitask-mcp.mjs"
+   ```
 
 3. Registre no cliente.
 
-   **Claude Code**
+   **Claude Code — macOS / Linux**
 
    ```bash
    claude mcp add orbitask --scope user \
@@ -24,22 +31,32 @@ Servidor [MCP](https://modelcontextprotocol.io) (stdio) que conecta o Orbitask a
      -- node ~/.orbitask/orbitask-mcp.mjs
    ```
 
-   **Codex** (`~/.codex/config.toml`; use caminho absoluto)
+   **Claude Code — Windows** (PowerShell; a quebra de linha é a crase)
+
+   ```powershell
+   claude mcp add orbitask --scope user `
+     --env ORBITASK_API_URL=https://SUA-API/api/v1 `
+     --env ORBITASK_TOKEN=otk_... `
+     -- node "$HOME\.orbitask\orbitask-mcp.mjs"
+   ```
+
+   **Codex** — `~/.codex/config.toml` (Windows: `%USERPROFILE%\.codex\config.toml`). Use o caminho absoluto; o Codex não expande `~`.
 
    ```toml
    [mcp_servers.orbitask]
    command = "node"
-   args = ["/Users/voce/.orbitask/orbitask-mcp.mjs"]
+   args = ["/Users/voce/.orbitask/orbitask-mcp.mjs"]          # Linux: /home/voce/...
+   # args = ['C:\Users\voce\.orbitask\orbitask-mcp.mjs']   # Windows: aspas simples
    env = { ORBITASK_API_URL = "https://SUA-API/api/v1", ORBITASK_TOKEN = "otk_..." }
    ```
 
-   **Outros clientes (JSON)**
+   **Outros clientes (JSON)** — no Windows, escape as barras: `"C:\\Users\\voce\\.orbitask\\orbitask-mcp.mjs"`.
 
    ```json
    { "mcpServers": { "orbitask": { "command": "node", "args": ["/Users/voce/.orbitask/orbitask-mcp.mjs"], "env": { "ORBITASK_API_URL": "https://SUA-API/api/v1", "ORBITASK_TOKEN": "otk_..." } } } }
    ```
 
-A tela de Integrações já mostra esses comandos com a URL da API e o token preenchidos.
+A tela de Integrações já mostra esses comandos para o seu sistema (macOS/Linux ou Windows), com a URL da API e o token preenchidos.
 
 ## Variáveis
 

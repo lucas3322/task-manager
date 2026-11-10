@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { CheckSquare, GitBranch, Lock, MessageSquare, MoreHorizontal, Paperclip, Plus, Settings2 } from "lucide-react";
 import type { Status, Task } from "@orbitask/contracts";
 import { MenuItem, Popover } from "../components/primitives";
-import { Assignees, DueChip, Pill, PriorityFlag } from "../components/task-bits";
+import { Badge, Assignees, DueChip, Pill, PriorityFlag } from "../components/task-bits";
 import { customFieldDisplay, taskStats } from "../lib/tasks";
 import { useStore } from "../store";
 import { dropAnimation, sortableTransition, useFreshTaskIds, useTaskDnd } from "./dnd";
@@ -143,7 +143,10 @@ export function TaskCard({ task, overlay, entering }: { task: Task; overlay?: bo
   const stats = taskStats(task, snapshot);
   const done = task.statusId === doneId;
   const fields = compact ? [] : customFieldDisplay(snapshot, task, 2);
-  const labels = [...task.badgeIds.map((id) => badgeById.get(id)), ...task.tagIds.map((id) => tagById.get(id))].filter(Boolean);
+  const badges = task.badgeIds.map((id) => badgeById.get(id)).filter((item) => item !== undefined);
+  const tags = task.tagIds.map((id) => tagById.get(id)).filter((item) => item !== undefined);
+  const shownTags = tags.slice(0, Math.max(0, 3 - badges.length));
+  const hiddenLabels = badges.length + tags.length - Math.min(badges.length, 3) - shownTags.length;
   return (
     <article
       className={`task-card ${overlay ? "overlay" : ""} ${entering ? "enter" : ""} ${selected ? "selected" : ""} ${done ? "done" : ""} ${compact ? "compact" : ""}`}
@@ -151,14 +154,19 @@ export function TaskCard({ task, overlay, entering }: { task: Task; overlay?: bo
       onKeyDown={(event) => event.key === "Enter" && void openTask(task.id)}
       aria-label={task.title}
     >
-      {!compact && labels.length > 0 && (
+      {!compact && badges.length + tags.length > 0 && (
         <div className="task-card-labels">
-          {labels.slice(0, 3).map((label) => (
-            <Pill key={label!.id} color={label!.color}>
-              {label!.name}
+          {badges.slice(0, 3).map((badge) => (
+            <Badge key={badge.id} color={badge.color}>
+              {badge.name}
+            </Badge>
+          ))}
+          {shownTags.map((tag) => (
+            <Pill key={tag.id} color={tag.color}>
+              {tag.name}
             </Pill>
           ))}
-          {labels.length > 3 && <span className="subtle small-text">+{labels.length - 3}</span>}
+          {hiddenLabels > 0 && <span className="subtle small-text">+{hiddenLabels}</span>}
         </div>
       )}
       <h3 className="task-card-title">

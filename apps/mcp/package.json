@@ -1,6 +1,6 @@
 {
   "name": "@orbitask/mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "Servidor MCP do Orbitask para Claude Code, Codex e outros clientes MCP",
   "type": "module",

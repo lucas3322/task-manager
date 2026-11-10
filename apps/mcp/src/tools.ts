@@ -71,6 +71,7 @@ function helpers(snapshot: WorkspaceSnapshot) {
     status: (value: string) => resolveOne(statuses, value, 'Status', (item) => item.id, (item) => item.name).id,
     priority: (value: string) => resolveOne(snapshot.settings.priorities, value, 'Prioridade', (item) => item.id, (item) => item.name).id,
     tag: (value: string) => resolveOne(snapshot.settings.tags, value, 'Tag', (item) => item.id, (item) => item.name).id,
+    badge: (value: string) => resolveOne(snapshot.settings.badges, value, 'Selo', (item) => item.id, (item) => item.name).id,
     member: (value: string) =>
       value === 'me' || normalize(value) === 'eu'
         ? snapshot.user.id
@@ -80,6 +81,7 @@ function helpers(snapshot: WorkspaceSnapshot) {
       title: task.title,
       status: name(statuses, task.statusId),
       priority: name(snapshot.settings.priorities, task.priority),
+      badges: task.badgeIds.map((id) => name(snapshot.settings.badges, id)).filter(Boolean),
       tags: task.tagIds.map((id) => name(snapshot.settings.tags, id)).filter(Boolean),
       assignees: task.assigneeIds.map(person).filter(Boolean),
       startDate: task.startDate,
@@ -156,6 +158,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
             isDone: status.id === h.doneId,
           })),
           priorities: snapshot.settings.priorities.map(({ id, name }) => ({ id, name })),
+          badges: snapshot.settings.badges.map(({ id, name }) => ({ id, name })),
           tags: snapshot.settings.tags.map(({ id, name }) => ({ id, name })),
           people: h.people.map((member) => ({ id: member.userId, name: member.name, role: member.role, isMe: member.userId === snapshot.user.id })),
           customFields: snapshot.customFields.map(({ id, name, type }) => ({ id, name, type })),
@@ -231,7 +234,6 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
           ...h.summary(task),
           project: { id: snapshot.project.id, name: snapshot.project.name },
           description: task.description,
-          badges: task.badgeIds.map((id) => snapshot.settings.badges.find((item) => item.id === id)?.name).filter(Boolean),
           followers: task.followerIds.map(h.person).filter(Boolean),
           subtasks: snapshot.tasks.filter((item) => item.parentId === task.id).map(h.summary),
           checklist: snapshot.checklistItems.filter((item) => item.taskId === task.id).sort((a, b) => a.position - b.position).map(({ id, title, completed }) => ({ id, title, completed })),
@@ -295,7 +297,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
         project: projectParam,
         includeTasks: z.boolean().optional().describe('Mostrar as tarefas dentro de cada etapa (padrão: true)'),
         maxTasksPerStage: z.number().int().min(1).max(30).optional().describe('Tarefas por etapa antes de resumir em "+N" (padrão: 8)'),
-        saveSvgTo: z.string().optional().describe('Caminho para salvar o SVG, ex.: ~/Desktop/fluxo.svg'),
+        saveSvgTo: z.string().optional().describe('Caminho para salvar o SVG, ex.: ~/Desktop/fluxo.svg ou C:\\Users\\voce\\Desktop\\fluxo.svg'),
         theme: z.enum(['light', 'dark']).optional().describe('Tema do SVG (padrão: light)'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -317,7 +319,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
         })
         const parts = [describeProcessFlow(flow), '', '```mermaid', renderProcessFlowMermaid(flow), '```']
         if (args.saveSvgTo) {
-          const target = args.saveSvgTo.replace(/^~(?=$|\/)/, homedir())
+          const target = args.saveSvgTo.replace(/^~(?=$|[\\/])/, homedir())
           const path = isAbsolute(target) ? target : resolve(process.cwd(), target)
           await writeFile(path, renderProcessFlowSvg(flow, { theme: args.theme, showTasks: args.includeTasks !== false }), 'utf8')
           parts.push('', `SVG salvo em ${path}`)
@@ -335,7 +337,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
     'create_task',
     {
       title: 'Criar tarefa',
-      description: 'Cria uma tarefa (ou subtarefa, com parentTaskId). Status, prioridade, tags e responsáveis aceitam nomes.',
+      description: 'Cria uma tarefa (ou subtarefa, com parentTaskId). Status, prioridade, selos, tags e responsáveis aceitam nomes.',
       inputSchema: {
         project: projectParam,
         title: z.string().min(1).max(240),
@@ -343,6 +345,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
         status: z.string().optional().describe('Etapa inicial (padrão: a primeira)'),
         priority: z.string().optional(),
         tags: z.array(z.string()).optional(),
+        badges: z.array(z.string()).optional().describe('Selos (destaques como "Cliente" ou "Bloqueado")'),
         assignees: z.array(z.string()).optional().describe('Nomes, ids ou "me". Padrão: você'),
         startDate: isoDate.optional(),
         dueDate: isoDate.optional(),
@@ -359,11 +362,13 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
         const statusId = args.status ? h.status(args.status) : h.statuses[0].id
         const priority = args.priority ? h.priority(args.priority) : undefined
         const tagIds = args.tags?.map(h.tag)
+        const badgeIds = args.badges?.map(h.badge)
         const assigneeIds = args.assignees?.map(h.member)
         const created = await client.createTask({ projectId: snapshot.project.id, title: args.title.trim(), statusId, priority, parentId: args.parentTaskId ?? null })
         const extra = {
           ...(args.description?.trim() ? { description: args.description.trim() } : {}),
           ...(tagIds?.length ? { tagIds } : {}),
+          ...(badgeIds?.length ? { badgeIds } : {}),
           ...(assigneeIds ? { assigneeIds, primaryAssigneeId: assigneeIds[0] ?? null } : {}),
           ...(args.startDate ? { startDate: args.startDate } : {}),
           ...(args.dueDate ? { dueDate: args.dueDate } : {}),
@@ -378,7 +383,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
     {
       title: 'Atualizar tarefa',
       description:
-        'Altera título, descrição, etapa (mover no quadro), prioridade, datas, tags ou responsáveis. Envie só o que mudar. Para limpar uma data, envie null.',
+        'Altera título, descrição, etapa (mover no quadro), prioridade, datas, selos, tags ou responsáveis. Envie só o que mudar. Para limpar uma data, envie null.',
       inputSchema: {
         taskId: z.string(),
         title: z.string().min(1).max(240).optional(),
@@ -390,6 +395,9 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
         tags: z.array(z.string()).optional().describe('Substitui todas as tags'),
         addTags: z.array(z.string()).optional(),
         removeTags: z.array(z.string()).optional(),
+        badges: z.array(z.string()).optional().describe('Substitui todos os selos'),
+        addBadges: z.array(z.string()).optional(),
+        removeBadges: z.array(z.string()).optional(),
         assignees: z.array(z.string()).optional().describe('Substitui os responsáveis (nomes, ids ou "me")'),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -405,6 +413,13 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
           for (const tag of args.removeTags ?? []) current.delete(h.tag(tag))
           tagIds = [...current]
         }
+        let badgeIds: string[] | undefined = args.badges?.map(h.badge)
+        if (args.addBadges?.length || args.removeBadges?.length) {
+          const current = new Set(badgeIds ?? task.badgeIds)
+          for (const badge of args.addBadges ?? []) current.add(h.badge(badge))
+          for (const badge of args.removeBadges ?? []) current.delete(h.badge(badge))
+          badgeIds = [...current]
+        }
         const assigneeIds = args.assignees?.map(h.member)
         const input = {
           id: task.id,
@@ -415,6 +430,7 @@ export function registerTools(server: McpServer, { client, readOnly }: Context) 
           ...(args.startDate !== undefined ? { startDate: args.startDate } : {}),
           ...(args.dueDate !== undefined ? { dueDate: args.dueDate } : {}),
           ...(tagIds ? { tagIds } : {}),
+          ...(badgeIds ? { badgeIds } : {}),
           ...(assigneeIds ? { assigneeIds, primaryAssigneeId: assigneeIds[0] ?? null } : {}),
         }
         if (Object.keys(input).length === 1) throw new Error('Nada para alterar: informe ao menos um campo.')

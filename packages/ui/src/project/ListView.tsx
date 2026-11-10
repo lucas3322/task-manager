@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Check, ChevronDown, GitBranch, GripVertical, Inbox, Lock, MessageSquare, Plus } from "lucide-react";
 import type { Task, TaskGroup } from "@orbitask/contracts";
 import { EmptyState } from "../components/primitives";
-import { Assignees, ChoiceMenu, DueChip, Pill, PriorityFlag, statusChoices } from "../components/task-bits";
+import { Badge, Assignees, ChoiceMenu, DueChip, Pill, PriorityFlag, statusChoices } from "../components/task-bits";
 import { taskStats } from "../lib/tasks";
 import { useStore } from "../store";
 import { QuickAdd } from "./Board";
@@ -139,7 +139,7 @@ function ListRow({ task, overlay, entering, draggable }: { task: Task; overlay?:
   const openTask = useStore((state) => state.openTask);
   const updateTask = useStore((state) => state.updateTask);
   const selected = useStore((state) => state.selectedTaskId === task.id);
-  const { statusById, priorityById, tagById, doneId } = useTaskHelpers();
+  const { statusById, priorityById, tagById, badgeById, doneId } = useTaskHelpers();
   const stats = taskStats(task, snapshot);
   const done = task.statusId === doneId;
   const status = statusById.get(task.statusId);
@@ -160,6 +160,14 @@ function ListRow({ task, overlay, entering, draggable }: { task: Task; overlay?:
         </button>
         {stats.blocked && <Lock className="task-blocked" aria-label="Bloqueada" />}
         <span className="list-title">{task.title}</span>
+        {task.badgeIds.slice(0, 2).map((id) => {
+          const badge = badgeById.get(id);
+          return badge ? (
+            <Badge key={id} color={badge.color}>
+              {badge.name}
+            </Badge>
+          ) : null;
+        })}
         {task.tagIds.slice(0, 2).map((id) => {
           const tag = tagById.get(id);
           return tag ? (

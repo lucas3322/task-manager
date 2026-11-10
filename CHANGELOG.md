@@ -2,14 +2,15 @@
 
 Todas as mudanças relevantes do Orbitask serão registradas aqui.
 
-## Não lançado
+## 0.6.0 — 2026-11-10
 
 ### Novidades
 
 - Servidor MCP (`apps/mcp`): Claude Code, Codex e outros clientes MCP listam, criam e atualizam tarefas, comentam, gerenciam checklist e dependências e geram o fluxograma do processo. Modo somente leitura com `ORBITASK_READ_ONLY=1`.
 - Tokens de acesso pessoal (`otk_…`) em Ajustes › Integrações e MCP, com validade opcional, último uso e revogação; endpoints `GET/POST/DELETE /auth/tokens`.
 - Exportar fluxograma do projeto: etapas, tarefas, dependências e automações desenhadas em SVG, PNG (2×) ou Mermaid, com tema claro ou escuro.
-- Tags e selos já podem ser escolhidos ao criar a tarefa.
+- Selos ganharam campo próprio no painel da tarefa e no modal de criação (antes ficavam escondidos no seletor de tags) e aparecem como chip sólido no quadro e na lista; tags também podem ser escolhidas ao criar a tarefa.
+- Atalho "Gerenciar selos/tags" direto do seletor para as configurações do projeto.
 
 ### Correções
 

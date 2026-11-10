@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { CalendarDays, Check, ChevronDown, Flag, type LucideIcon } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, Flag, Sparkles, type LucideIcon } from "lucide-react";
 import type { ProjectOption, Status, Task, WorkspaceMember, WorkspaceSnapshot } from "@orbitask/contracts";
 import { dueTone, formatDue } from "../lib/format";
 import { Avatar, AvatarStack, Popover } from "./primitives";
@@ -10,6 +10,16 @@ export function Pill({ color, children, title }: { color: string; children: Reac
   return (
     <span className="ui-pill" style={{ "--pill": color } as React.CSSProperties} title={title}>
       <i className="ui-dot" style={{ background: color, width: 7, height: 7 }} />
+      <span>{children}</span>
+    </span>
+  );
+}
+
+/** Selo: destaque sólido (ex.: "Cliente", "Bloqueado"), visualmente distinto das tags. */
+export function Badge({ color, children, title }: { color: string; children: React.ReactNode; title?: string }) {
+  return (
+    <span className="ui-badge" style={{ "--badge": color } as React.CSSProperties} title={title}>
+      <Sparkles aria-hidden="true" />
       <span>{children}</span>
     </span>
   );
