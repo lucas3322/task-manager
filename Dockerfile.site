@@ -11,11 +11,20 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/site/package.json apps/site/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/ui/package.json packages/ui/package.json
-RUN pnpm install --frozen-lockfile --filter @orbitask/site...
+COPY packages/domain/package.json packages/domain/package.json
+COPY apps/mcp/package.json apps/mcp/package.json
+RUN pnpm install --frozen-lockfile --filter @orbitask/site... --filter @orbitask/mcp...
 COPY apps/site apps/site
 COPY packages/contracts packages/contracts
 COPY packages/ui packages/ui
+COPY packages/domain packages/domain
+COPY apps/mcp apps/mcp
 RUN pnpm --filter @orbitask/site build
+# Servidor MCP em arquivo único, baixado em Ajustes › Integrações e MCP (/mcp/orbitask-mcp.mjs).
+# Usa a mesma API do site como padrão; o comando de instalação também passa ORBITASK_API_URL.
+RUN ORBITASK_API_URL=$VITE_API_URL pnpm --filter @orbitask/mcp build \
+  && mkdir -p apps/site/dist/mcp \
+  && cp apps/mcp/dist/orbitask-mcp.mjs apps/site/dist/mcp/orbitask-mcp.mjs
 
 FROM caddy:2.10-alpine
 COPY apps/site/Caddyfile /etc/caddy/Caddyfile

@@ -12,7 +12,7 @@ import type {
 import { api, errorMessage, type Platform } from "./api";
 
 export type ProjectView = "overview" | "board" | "list" | "calendar" | "timeline";
-export type SettingsTab = "profile" | "security" | "appearance" | "workspace" | "shortcuts" | "about";
+export type SettingsTab = "profile" | "security" | "appearance" | "workspace" | "integrations" | "shortcuts" | "about";
 export type ProjectSettingsTab = "general" | "workflow" | "fields" | "automations" | "trash";
 export type Route =
   | { name: "home" }
@@ -36,12 +36,13 @@ const projectViewSlugs = Object.fromEntries(Object.entries(projectViews).map(([s
   ProjectView,
   string
 >;
-const settingsTabs: SettingsTab[] = ["profile", "security", "appearance", "workspace", "shortcuts", "about"];
+const settingsTabs: SettingsTab[] = ["profile", "security", "appearance", "workspace", "integrations", "shortcuts", "about"];
 const settingsSlugs: Record<SettingsTab, string> = {
   profile: "perfil",
   security: "seguranca",
   appearance: "aparencia",
   workspace: "workspace",
+  integrations: "integracoes",
   shortcuts: "atalhos",
   about: "sobre",
 };

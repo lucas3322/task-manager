@@ -222,6 +222,19 @@ CREATE TABLE IF NOT EXISTS user_project_preferences (
 CREATE INDEX IF NOT EXISTS idx_tasks_project_status ON tasks(project_id, status_id, position) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_projects_workspace ON projects(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON auth_sessions(token_hash);
+-- Tokens de acesso pessoal (MCP, scripts, integrações): longos, nomeados e revogáveis.
+CREATE TABLE IF NOT EXISTS api_tokens (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  name VARCHAR(80) NOT NULL,
+  prefix VARCHAR(16) NOT NULL,
+  token_hash VARCHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ,
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_user ON api_tokens(user_id,workspace_id);
 CREATE INDEX IF NOT EXISTS idx_priorities_project ON project_priorities(project_id,position);
 CREATE INDEX IF NOT EXISTS idx_tags_project ON project_tags(project_id,position);
 CREATE INDEX IF NOT EXISTS idx_badges_project ON project_badges(project_id,position);

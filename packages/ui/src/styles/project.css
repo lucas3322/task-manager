@@ -1207,3 +1207,42 @@
     transform: none;
   }
 }
+
+/* ---------- Exportar fluxograma ---------- */
+.ui-dialog.flow-export-dialog {
+  max-width: min(1120px, calc(100vw - 48px));
+}
+.flow-export-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.flow-export-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.flow-export-hint {
+  margin-left: auto;
+}
+.flow-export-preview {
+  max-height: min(62vh, 640px);
+  min-height: 240px;
+  overflow: auto;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--separator);
+  background: #f6f6f9;
+}
+.flow-export-preview.dark {
+  background: #131316;
+}
+.flow-export-canvas svg {
+  display: block;
+  width: 100%;
+  min-width: 720px;
+  height: auto;
+}

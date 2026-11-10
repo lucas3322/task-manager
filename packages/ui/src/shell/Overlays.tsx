@@ -17,14 +17,16 @@ import {
   SquareCheck,
   Sun,
   Target,
+  Tag,
   UserRound,
   Users,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import type { GlobalSearchResult, WorkspaceSnapshot } from "@orbitask/contracts";
 import { api, errorMessage } from "../api";
 import { Avatar, AutoTextarea, ColorSwatches, Dialog, ProjectGlyph, Spinner, useEscape, usePresence } from "../components/primitives";
-import { ChoiceMenu, PropertyButton, memberChoices, priorityChoices, statusChoices } from "../components/task-bits";
+import { ChoiceMenu, Pill, PropertyButton, memberChoices, optionChoices, priorityChoices, statusChoices } from "../components/task-bits";
 import { palette, projectIcons } from "../lib/catalog";
 import { formatDue } from "../lib/format";
 import { firstStatusId } from "../lib/tasks";
@@ -41,7 +43,7 @@ export function CreateTaskDialog() {
   const openTask = useStore((state) => state.openTask);
   const toast = useStore((state) => state.toast);
   const [target, setTarget] = useState<WorkspaceSnapshot | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", statusId: "", priority: "", assigneeIds: [] as string[], dueDate: "" });
+  const [form, setForm] = useState({ title: "", description: "", statusId: "", priority: "", assigneeIds: [] as string[], dueDate: "", labelIds: [] as string[] });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [another, setAnother] = useState(false);
@@ -57,6 +59,7 @@ export function CreateTaskDialog() {
       priority: "",
       assigneeIds: [current.user.id],
       dueDate: draft.dueDate ?? "",
+      labelIds: [],
     });
   }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -65,7 +68,7 @@ export function CreateTaskDialog() {
     try {
       const next = projectId === current.project.id ? current : await api().getSnapshot(projectId);
       setTarget(next);
-      setForm((value) => ({ ...value, statusId: firstStatusId(next) ?? "", priority: "" }));
+      setForm((value) => ({ ...value, statusId: firstStatusId(next) ?? "", priority: "", labelIds: [] }));
     } catch (reason) {
       setError(errorMessage(reason, "Não foi possível abrir o projeto"));
     }
@@ -84,8 +87,13 @@ export function CreateTaskDialog() {
         priority: form.priority || undefined,
         parentId: draft?.parentId ?? null,
       });
+      /* Tags e selos dividem o mesmo seletor; separamos pelo cadastro do projeto. */
+      const tagIds = form.labelIds.filter((id) => target.settings.tags.some((item) => item.id === id));
+      const badgeIds = form.labelIds.filter((id) => target.settings.badges.some((item) => item.id === id));
       const extra = {
         ...(form.description.trim() ? { description: form.description.trim() } : {}),
+        ...(tagIds.length ? { tagIds } : {}),
+        ...(badgeIds.length ? { badgeIds } : {}),
         ...(form.dueDate ? { dueDate: form.dueDate } : {}),
         ...(form.assigneeIds.join() !== target.user.id
           ? { assigneeIds: form.assigneeIds, primaryAssigneeId: form.assigneeIds[0] ?? null }
@@ -118,6 +126,8 @@ export function CreateTaskDialog() {
   const status = snapshot.statuses.find((item) => item.id === form.statusId);
   const priority = snapshot.settings.priorities.find((item) => item.id === form.priority);
   const assignees = snapshot.members.filter((member) => form.assigneeIds.includes(member.userId));
+  const labelOptions = [...snapshot.settings.badges, ...snapshot.settings.tags];
+  const labels = form.labelIds.map((id) => labelOptions.find((item) => item.id === id)).filter((item) => item !== undefined);
 
   return (
     <Dialog
@@ -194,6 +204,32 @@ export function CreateTaskDialog() {
                   <>
                     <UserRound />
                     Responsável
+                  </>
+                )}
+              </PropertyButton>
+            )}
+          />
+          <ChoiceMenu
+            multiple
+            choices={[...optionChoices(snapshot.settings.badges).map((item) => ({ ...item, hint: "Selo" })), ...optionChoices(snapshot.settings.tags)]}
+            value={form.labelIds}
+            onChange={(labelIds) => setForm({ ...form, labelIds })}
+            emptyLabel="Crie tags nas configurações do projeto"
+            trigger={(props) => (
+              <PropertyButton {...props} placeholder={!labels.length}>
+                {labels.length ? (
+                  <span className="prop-pills">
+                    {labels.slice(0, 2).map((item) => (
+                      <Pill key={item.id} color={item.color}>
+                        {item.name}
+                      </Pill>
+                    ))}
+                    {labels.length > 2 && <span className="subtle">+{labels.length - 2}</span>}
+                  </span>
+                ) : (
+                  <>
+                    <Tag />
+                    Tags
                   </>
                 )}
               </PropertyButton>
@@ -381,6 +417,18 @@ export function CommandPalette() {
       ...(snapshot.workspace.role === "admin"
         ? [{ id: "new-project", group: "Ações", label: "Novo projeto", icon: FolderPlus, keywords: "criar", run: () => setCreateProjectOpen(true) }]
         : []),
+      {
+        id: "export-flow",
+        group: "Ações",
+        label: `Exportar fluxograma de ${snapshot.project.name}`,
+        icon: Workflow,
+        keywords: "processo pipeline diagrama mermaid png svg",
+        run: () => {
+          const route = useStore.getState().route;
+          if (route.name !== "project" || route.projectId !== snapshot.project.id) navigate({ name: "project", projectId: snapshot.project.id, view: "board" });
+          setTimeout(() => window.dispatchEvent(new CustomEvent("orbitask:export-flow")), 60);
+        },
+      },
       { id: "theme", group: "Ações", label: dark ? "Usar aparência clara" : "Usar aparência escura", icon: dark ? Sun : Moon, keywords: "tema modo escuro claro", run: () => setPrefs({ theme: dark ? "light" : "dark" }) },
       { id: "home", group: "Ir para", label: "Início", icon: House, run: go({ name: "home" }) },
       { id: "my-tasks", group: "Ir para", label: "Minhas tarefas", icon: CircleCheck, run: go({ name: "my-tasks" }) },

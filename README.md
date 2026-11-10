@@ -7,6 +7,7 @@ Gestão de projetos para desktop e web, com contas, workspaces e persistência e
 - `apps/desktop`: Electron + React consumindo a API HTTPS.
 - `apps/api`: API NestJS conectada ao PostgreSQL.
 - `apps/site`: landing, downloads, novidades e entrada do app web.
+- `apps/mcp`: servidor MCP para Claude Code, Codex e outros clientes ([como instalar](apps/mcp/README.md)).
 - `packages/contracts`: contratos compartilhados.
 - `packages/domain`: regras de negócio independentes da interface.
 
@@ -19,6 +20,8 @@ Gestão de projetos para desktop e web, com contas, workspaces e persistência e
 - Status, prioridade, descrição e data de entrega.
 - Landing page, novidades, download e acesso ao aplicativo web.
 - Sessão do Electron protegida pelo cofre seguro do sistema operacional.
+- Exportação do fluxograma do processo de cada projeto em SVG, PNG ou Mermaid.
+- Tokens de acesso pessoal e servidor MCP para usar o Orbitask de dentro de LLMs.
 
 ## Desenvolvimento
 

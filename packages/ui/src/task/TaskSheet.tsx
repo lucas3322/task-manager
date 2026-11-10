@@ -65,6 +65,35 @@ function Section({ icon: Icon, title, count, children, action }: { icon: typeof 
   );
 }
 
+/** Título do item de checklist: quebra linha como texto comum; Enter salva, Esc desfaz. */
+function ChecklistTitle({ title, onSave }: { title: string; onSave: (title: string) => void }) {
+  const [value, setValue] = useState(title);
+  useEffect(() => setValue(title), [title]);
+  return (
+    <AutoTextarea
+      className="sub-input"
+      value={value}
+      onChange={(event) => setValue(event.target.value.replace(/\n/g, " "))}
+      onBlur={() => {
+        const next = value.trim();
+        if (next && next !== title) onSave(next);
+        else setValue(title);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        } else if (event.key === "Escape") {
+          event.stopPropagation();
+          setValue(title);
+          requestAnimationFrame(() => (event.target as HTMLTextAreaElement).blur());
+        }
+      }}
+      aria-label="Item do checklist"
+    />
+  );
+}
+
 function TaskDetail({ task }: { task: Task }) {
   const snapshot = useStore((state) => state.snapshot)!;
   const updateTask = useStore((state) => state.updateTask);
@@ -404,13 +433,7 @@ function TaskDetail({ task }: { task: Task }) {
                 <button type="button" className={`ui-check square ${item.completed ? "done" : ""}`} aria-label={item.completed ? "Desmarcar" : "Marcar"} onClick={() => void run(() => api().updateChecklistItem({ id: item.id, completed: !item.completed }))}>
                   <Check />
                 </button>
-                <input
-                  className="sub-input"
-                  defaultValue={item.title}
-                  onBlur={(event) => event.target.value.trim() && event.target.value.trim() !== item.title && void run(() => api().updateChecklistItem({ id: item.id, title: event.target.value.trim() }))}
-                  onKeyDown={(event) => event.key === "Enter" && (event.target as HTMLInputElement).blur()}
-                  aria-label="Item do checklist"
-                />
+                <ChecklistTitle title={item.title} onSave={(title) => void run(() => api().updateChecklistItem({ id: item.id, title }))} />
                 <button type="button" className="ui-icon-button small row-action" aria-label="Remover item" onClick={() => void run(() => api().removeChecklistItem(item.id))}>
                   <Trash2 />
                 </button>

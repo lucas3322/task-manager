@@ -15,6 +15,7 @@ import {
   Settings2,
   Trash2,
   UserPlus,
+  Workflow,
   X,
 } from "lucide-react";
 import type { AdvancedTaskFilter, DueFilter, SavedTaskFilter, TaskGroup, TaskSort } from "@orbitask/contracts";
@@ -26,6 +27,7 @@ import { PageHeader } from "../shell/Sidebar";
 import { useStore, type ProjectView } from "../store";
 import { Board } from "./Board";
 import { CalendarView } from "./CalendarView";
+import { FlowExportDialog } from "./FlowExport";
 import { ListView } from "./ListView";
 import { ProjectOverview } from "./Overview";
 import { TimelineView } from "./TimelineView";
@@ -54,6 +56,7 @@ export function ProjectScreen({ projectId, view }: { projectId: string; view: Pr
   const fail = useStore((state) => state.fail);
   const [filter, setFilter] = useState<AdvancedTaskFilter>(blankFilter);
   const [saved, setSaved] = useState<SavedTaskFilter[]>([]);
+  const [flowOpen, setFlowOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const mismatch = snapshot.project.id !== projectId;
@@ -72,6 +75,12 @@ export function ProjectScreen({ projectId, view }: { projectId: string; view: Pr
   useEffect(() => {
     if (view === "board" || view === "list") void setDefaultView(view);
   }, [view, setDefaultView]);
+
+  useEffect(() => {
+    const onFlow = () => setFlowOpen(true);
+    window.addEventListener("orbitask:export-flow", onFlow);
+    return () => window.removeEventListener("orbitask:export-flow", onFlow);
+  }, []);
 
   useEffect(() => {
     const onFocus = () => searchRef.current?.focus();
@@ -138,6 +147,7 @@ export function ProjectScreen({ projectId, view }: { projectId: string; view: Pr
 
   return (
     <div className="page project-page">
+      <FlowExportDialog open={flowOpen} onClose={() => setFlowOpen(false)} />
       <PageHeader
         breadcrumb={[{ label: "Projetos", onClick: () => navigate({ name: "reports" }) }]}
         leading={<ProjectGlyph icon={project.icon} color={project.color} size={34} />}
@@ -160,6 +170,9 @@ export function ProjectScreen({ projectId, view }: { projectId: string; view: Pr
                 <UserPlus /> Convidar
               </button>
             )}
+            <button type="button" className="ui-button ghost" title="Exportar o processo do projeto como fluxograma (SVG, PNG ou Mermaid)" onClick={() => setFlowOpen(true)}>
+              <Workflow /> <span className="hide-sm">Fluxograma</span>
+            </button>
             <button type="button" className="ui-icon-button" aria-label="Configurações do projeto" title="Configurações do projeto" onClick={() => navigate({ name: "project-settings", projectId, tab: "general" })}>
               <Settings2 />
             </button>

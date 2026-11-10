@@ -35,3 +35,5 @@ export function isValidStatusTransition(
 ): boolean {
   return from === to || transitions.some((item) => item.fromStatusId === from && item.toStatusId === to)
 }
+
+export * from './process-flow'

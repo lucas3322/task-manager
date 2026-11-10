@@ -9,6 +9,9 @@ import type {
   Goal,
   InviteDetails,
   MyTask,
+  ApiToken,
+  CreateApiTokenInput,
+  CreatedApiToken,
   Notification,
   OrbitaskApi,
   Portfolio,
@@ -184,6 +187,12 @@ export function createHttpApi(baseUrl: string): OrbitaskApi {
     listTrash: (projectId: string) => request<Task[]>(`/projects/${encodeURIComponent(projectId)}/trash`),
     restoreTask: (id: string) => request<void>(`/tasks/${id}/restore`, json("POST")),
     listMyTasks: () => request<MyTask[]>("/me/tasks"),
+    getApiUrl: async () => root,
+    listApiTokens: () => request<ApiToken[]>("/auth/tokens"),
+    createApiToken: (input: CreateApiTokenInput) => request<CreatedApiToken>("/auth/tokens", json("POST", input)),
+    revokeApiToken: async (id: string) => {
+      await request(`/auth/tokens/${encodeURIComponent(id)}`, json("DELETE"));
+    },
     inspectInvite: (token: string) => request<InviteDetails>(`/invites/${encodeURIComponent(token)}`, undefined, false),
     acceptInvite: (token: string, input: { name: string; password: string }) =>
       authenticate(`/invites/${encodeURIComponent(token)}/accept`, input),

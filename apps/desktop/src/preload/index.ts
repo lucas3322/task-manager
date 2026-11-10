@@ -54,6 +54,10 @@ const api: OrbitaskApi = {
   listTrash:(projectId)=>ipcRenderer.invoke('task:trash:list',projectId),
   restoreTask:(id)=>ipcRenderer.invoke('task:restore',id),
   listMyTasks:()=>ipcRenderer.invoke('task:mine'),
+  getApiUrl:()=>ipcRenderer.invoke('app:api-url'),
+  listApiTokens:()=>ipcRenderer.invoke('tokens:list'),
+  createApiToken:(input)=>ipcRenderer.invoke('tokens:create',input),
+  revokeApiToken:(id)=>ipcRenderer.invoke('tokens:revoke',id),
 }
 
 contextBridge.exposeInMainWorld('orbitask', api)

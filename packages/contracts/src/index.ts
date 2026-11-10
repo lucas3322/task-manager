@@ -217,6 +217,11 @@ export interface Goal { id:string;workspaceId:string;title:string;description:st
 export interface SaveGoalInput { id?:string;title:string;description?:string;status:GoalStatus;progress:number;ownerId?:string|null;dueDate?:string|null;projectIds:string[] }
 export interface PortfolioOverview { portfolios:Portfolio[];goals:Goal[];projectMetrics:DashboardProjectMetric[] }
 
+/** Token de acesso pessoal (MCP, scripts). O valor completo só aparece uma vez, na criação. */
+export interface ApiToken { id:string; name:string; prefix:string; createdAt:string; lastUsedAt:string|null; expiresAt:string|null }
+export interface CreatedApiToken extends ApiToken { token:string }
+export interface CreateApiTokenInput { name:string; expiresInDays?:number|null }
+
 export interface OrbitaskApi {
   getSession(): Promise<AuthSession | null>
   signUp(input: SignUpInput): Promise<AuthSession>
@@ -270,6 +275,11 @@ export interface OrbitaskApi {
   listTrash(projectId:string):Promise<Task[]>
   restoreTask(id:string):Promise<void>
   listMyTasks():Promise<MyTask[]>
+  listApiTokens():Promise<ApiToken[]>
+  createApiToken(input:CreateApiTokenInput):Promise<CreatedApiToken>
+  revokeApiToken(id:string):Promise<void>
+  /** URL base da API (ex.: https://…/api/v1), usada para configurar integrações como o MCP. */
+  getApiUrl?():Promise<string>
   inspectInvite?(token:string):Promise<InviteDetails>
   acceptInvite?(token:string,input:{name:string;password:string}):Promise<AuthSession>
 }

@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Building2, Check, Info, Keyboard, LogOut, Monitor, Moon, Palette, ShieldCheck, Sun, UserRound, type LucideIcon } from "lucide-react";
+import { Building2, Check, Info, Keyboard, LogOut, Monitor, Moon, Palette, Plug, ShieldCheck, Sun, UserRound, type LucideIcon } from "lucide-react";
 import { api, errorMessage } from "../api";
 import { LogoMark } from "../components/Logo";
 import { requestUpdateCheck } from "../components/UpdateNotice";
 import { Avatar, Kbd, Spinner, Switch, confirm, modKey } from "../components/primitives";
 import { formatDate, roleLabel } from "../lib/format";
 import { PageHeader } from "../shell/Sidebar";
+import { IntegrationsSettings } from "./Integrations";
 import { useStore, type Accent, type SettingsTab } from "../store";
 import { APP_VERSION, siteUrl } from "../version";
 
@@ -15,6 +16,7 @@ const tabs: { id: SettingsTab; label: string; icon: LucideIcon; group: string }[
   { id: "appearance", label: "Aparência", icon: Palette, group: "Preferências" },
   { id: "shortcuts", label: "Atalhos de teclado", icon: Keyboard, group: "Preferências" },
   { id: "workspace", label: "Workspace", icon: Building2, group: "Workspace" },
+  { id: "integrations", label: "Integrações e MCP", icon: Plug, group: "Workspace" },
   { id: "about", label: "Sobre o Orbitask", icon: Info, group: "Workspace" },
 ];
 
@@ -56,6 +58,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab }) {
           {current.id === "appearance" && <AppearanceSettings />}
           {current.id === "shortcuts" && <ShortcutSettings />}
           {current.id === "workspace" && <WorkspaceSettings />}
+          {current.id === "integrations" && <IntegrationsSettings />}
           {current.id === "about" && <AboutSettings />}
         </div>
       </div>

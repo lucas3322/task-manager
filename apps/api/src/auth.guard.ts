@@ -2,7 +2,8 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException, creat
 import type { User, Workspace } from '@orbitask/contracts'
 import { AuthService } from './auth.service.js'
 
-export interface AuthContext { user:User; workspace:Workspace; token:string }
+/** `via` diz se a chamada veio de uma sessão de login ou de um token de acesso pessoal. */
+export interface AuthContext { user:User; workspace:Workspace; token:string; via:'session'|'token' }
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(private readonly auth:AuthService) {}

@@ -1,0 +1,27 @@
+{
+  "name": "@orbitask/mcp",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Servidor MCP do Orbitask para Claude Code, Codex e outros clientes MCP",
+  "type": "module",
+  "bin": {
+    "orbitask-mcp": "dist/orbitask-mcp.mjs"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node dist/orbitask-mcp.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@orbitask/contracts": "workspace:*",
+    "@orbitask/domain": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "esbuild": "^0.25.0",
+    "vitest": "^3.2.4"
+  }
+}

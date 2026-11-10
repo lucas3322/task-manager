@@ -1,4 +1,4 @@
-import type { AuthSession, AutomationRun, ChangePasswordInput, MyTask, Workspace, CreateTaskInput, CustomFieldDefinition, DashboardReport, GlobalSearchResult, Notification, Portfolio, PortfolioOverview, Project, ProjectAutomation, ProjectPreferences, SavedTaskFilter, SaveAutomationInput, SaveGoalInput, SavePortfolioInput, SaveTaskFilterInput, SignInInput, SignUpInput, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, User, WorkspaceInvite, WorkspaceMember, WorkspaceRole, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput, WorkspaceSnapshot, Goal } from '@orbitask/contracts'
+import type { ApiToken, CreateApiTokenInput, CreatedApiToken, AuthSession, AutomationRun, ChangePasswordInput, MyTask, Workspace, CreateTaskInput, CustomFieldDefinition, DashboardReport, GlobalSearchResult, Notification, Portfolio, PortfolioOverview, Project, ProjectAutomation, ProjectPreferences, SavedTaskFilter, SaveAutomationInput, SaveGoalInput, SavePortfolioInput, SaveTaskFilterInput, SignInInput, SignUpInput, Task, TaskAttachment, TaskChecklistItem, TaskComment, TaskCustomFieldValue, TaskDependency, User, WorkspaceInvite, WorkspaceMember, WorkspaceRole, UpdateProjectInput, UpdateProjectSettingsInput, UpdateTaskInput, WorkspaceSnapshot, Goal } from '@orbitask/contracts'
 import { clearToken, loadToken, saveToken } from './session-store'
 
 declare const __ORBITASK_DEFAULT_API_URL__: string
@@ -67,4 +67,8 @@ export const apiClient = {
   listTrash:(projectId:string)=>request<Task[]>(`/projects/${encodeURIComponent(projectId)}/trash`),
   restoreTask:(id:string)=>request<void>(`/tasks/${id}/restore`,{method:'POST'}),
   listMyTasks:()=>request<MyTask[]>('/me/tasks'),
+  getApiUrl:async()=>baseUrl,
+  listApiTokens:()=>request<ApiToken[]>('/auth/tokens'),
+  createApiToken:(input:CreateApiTokenInput)=>request<CreatedApiToken>('/auth/tokens',{method:'POST',body:JSON.stringify(input)}),
+  revokeApiToken:async(id:string)=>{await request(`/auth/tokens/${encodeURIComponent(id)}`,{method:'DELETE'})},
 }
